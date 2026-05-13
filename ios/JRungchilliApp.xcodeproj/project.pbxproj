@@ -11,6 +11,10 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		D80024AD00534DF6A7B762CD /* NotoSansMyanmar-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1DBCF73E0D434216A38E3A77 /* NotoSansMyanmar-Bold.ttf */; };
+		2C2BFF1CD4D24D32BB1C379F /* NotoSansMyanmar-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F253C6E9208C4859BC23C888 /* NotoSansMyanmar-Regular.ttf */; };
+		B6480062020D4C0686DE5B16 /* NotoSansThai-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0D085CBD0F9F43D9A8294161 /* NotoSansThai-Bold.ttf */; };
+		574205E89DA3467993FC687A /* NotoSansThai-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D58FB71FBA4B47E7B1B13EAC /* NotoSansThai-Regular.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +28,10 @@
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = JRungchilliApp/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = JRungchilliApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		1DBCF73E0D434216A38E3A77 /* NotoSansMyanmar-Bold.ttf */ = {isa = PBXFileReference; name = "NotoSansMyanmar-Bold.ttf"; path = "../src/assets/fonts/NotoSansMyanmar-Bold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		F253C6E9208C4859BC23C888 /* NotoSansMyanmar-Regular.ttf */ = {isa = PBXFileReference; name = "NotoSansMyanmar-Regular.ttf"; path = "../src/assets/fonts/NotoSansMyanmar-Regular.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		0D085CBD0F9F43D9A8294161 /* NotoSansThai-Bold.ttf */ = {isa = PBXFileReference; name = "NotoSansThai-Bold.ttf"; path = "../src/assets/fonts/NotoSansThai-Bold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		D58FB71FBA4B47E7B1B13EAC /* NotoSansThai-Regular.ttf */ = {isa = PBXFileReference; name = "NotoSansThai-Regular.ttf"; path = "../src/assets/fonts/NotoSansThai-Regular.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +82,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				DD0414C453B64137AD772706 /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -96,6 +105,18 @@
 			);
 			path = Pods;
 			sourceTree = "<group>";
+		};
+		DD0414C453B64137AD772706 /* Resources */ = {
+			isa = "PBXGroup";
+			children = (
+				1DBCF73E0D434216A38E3A77 /* NotoSansMyanmar-Bold.ttf */,
+				F253C6E9208C4859BC23C888 /* NotoSansMyanmar-Regular.ttf */,
+				0D085CBD0F9F43D9A8294161 /* NotoSansThai-Bold.ttf */,
+				D58FB71FBA4B47E7B1B13EAC /* NotoSansThai-Regular.ttf */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+			path = "";
 		};
 /* End PBXGroup section */
 
@@ -159,6 +180,10 @@
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				D80024AD00534DF6A7B762CD /* NotoSansMyanmar-Bold.ttf in Resources */,
+				2C2BFF1CD4D24D32BB1C379F /* NotoSansMyanmar-Regular.ttf in Resources */,
+				B6480062020D4C0686DE5B16 /* NotoSansThai-Bold.ttf in Resources */,
+				574205E89DA3467993FC687A /* NotoSansThai-Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
