@@ -1,32 +1,52 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, Image } from 'react-native';
-import { DatabaseService } from './src/services/database';
-import { AppNavigator } from './src/navigation/AppNavigator';
+import React, { useEffect, useState } from "react";
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { initDatabase } from "./src/core/database/initDb";
+import { DB } from "./src/core/database/DatabaseService";
+import { useAppStore } from "./src/core/store/appStore";
+import RootNavigator from "./src/navigation/RootNavigator";
 
-export default function App() {
+function SplashScreen() {
+  return (
+    <View style={sp.container}>
+      <Text style={sp.logo}>🌶️</Text>
+      <ActivityIndicator size="large" color="#c0392b" style={{ marginTop: 24 }} />
+      <Text style={sp.text}>กำลังโหลด... / Loading...</Text>
+    </View>
+  );
+}
+
+function AppContent() {
+  const { setSettings } = useAppStore();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    DatabaseService.init()
-      .then(() => setReady(true))
-      .catch(() => setReady(true));
+    (async () => {
+      try {
+        await initDatabase();
+        // โหลด settings จาก DB เข้า store
+        const shopName    = DB.getSetting('shop_name')    || 'เจรุ่งชิลลี่';
+        const shopAddress = DB.getSetting('shop_address') || 'แม่สอด';
+        const adminPin    = DB.getSetting('admin_pin')    || '0000';
+        const changeFund  = parseFloat(DB.getSetting('change_fund') || '500');
+        setSettings({ shop_name: shopName, shop_address: shopAddress, admin_pin: adminPin, change_fund: changeFund });
+      } catch (e) {
+        console.error('Init error:', e);
+      } finally {
+        setReady(true);
+      }
+    })();
   }, []);
 
-  if (!ready) {
-    return (
-      <View style={styles.loading}>
-        <Image source={require('./src/assets/logo.png')} style={styles.logo} />
-        <ActivityIndicator size="large" color="#c0392b" style={{ marginTop: 24 }} />
-        <Text style={styles.text}>กำลังโหลด...</Text>
-      </View>
-    );
-  }
-
-  return <AppNavigator />;
+  if (!ready) return <SplashScreen />;
+  return <RootNavigator />;
 }
 
-const styles = StyleSheet.create({
-  loading: { flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'#fff' },
-  logo: { width:150, height:150, resizeMode:'contain' },
-  text: { fontSize:16, color:'#c0392b', marginTop:12, fontWeight:'600' },
+export default function App() {
+  return <AppContent />;
+}
+
+const sp = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
+  logo: { fontSize: 72 },
+  text: { fontSize: 15, color: '#c0392b', marginTop: 12, fontWeight: '600' },
 });
