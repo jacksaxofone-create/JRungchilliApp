@@ -19,3 +19,33 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// Fix: jcenter() was removed in Gradle 9+. Override repositories for ALL subprojects
+// so that legacy libraries (e.g. @brooons/react-native-bluetooth-escpos-printer) that
+// still reference jcenter() will resolve against mavenCentral() instead.
+allprojects {
+    configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            // Force AndroidX support-v4 migration
+            if (details.requested.group == 'com.android.support' && details.requested.name == 'support-v4') {
+                details.useTarget('androidx.legacy:legacy-support-v4:1.0.0')
+                details.because('Migrating com.android.support to AndroidX')
+            }
+        }
+    }
+
+    // Redirect any jcenter() call from sub-modules to mavenCentral()
+    // This is applied AFTER each sub-project evaluates its own buildscript
+    buildscript {
+        repositories {
+            google()
+            mavenCentral()
+        }
+    }
+    repositories {
+        google()
+        mavenCentral()
+        maven { url "https://jitpack.io" }
+        maven { url "$rootDir/../node_modules/react-native/android" }
+    }
+}
