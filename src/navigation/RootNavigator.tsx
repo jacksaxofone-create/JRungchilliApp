@@ -17,7 +17,7 @@ import OrderScreen from "../features/order/OrderScreen";
 import PrinterSettingsScreen from "../features/settings/PrinterSettingsScreen";
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Tab   = createBottomTabNavigator();
 
 function AdminTabs() {
   return (
@@ -33,42 +33,27 @@ function AdminTabs() {
       <Tab.Screen
         name="AdminDashboard"
         component={AdminDashboardScreen}
-        options={{
-          tabBarLabel: "Dashboard",
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>📊</Text>,
-        }}
+        options={{ tabBarLabel: "Dashboard", tabBarIcon: () => <Text style={{ fontSize: 20 }}>📊</Text> }}
       />
       <Tab.Screen
         name="ProductList"
         component={ProductListScreen}
-        options={{
-          tabBarLabel: "สินค้า",
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>📦</Text>,
-        }}
+        options={{ tabBarLabel: "สินค้า", tabBarIcon: () => <Text style={{ fontSize: 20 }}>📦</Text> }}
       />
       <Tab.Screen
         name="CustomerList"
         component={CustomerListScreen}
-        options={{
-          tabBarLabel: "ลูกค้า",
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>👥</Text>,
-        }}
+        options={{ tabBarLabel: "ลูกค้า", tabBarIcon: () => <Text style={{ fontSize: 20 }}>👥</Text> }}
       />
       <Tab.Screen
         name="AllOrders"
         component={AllOrdersScreen}
-        options={{
-          tabBarLabel: "ออเดอร์",
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>📋</Text>,
-        }}
+        options={{ tabBarLabel: "ออเดอร์", tabBarIcon: () => <Text style={{ fontSize: 20 }}>📋</Text> }}
       />
       <Tab.Screen
         name="PrinterSettings"
         component={PrinterSettingsScreen}
-        options={{
-          tabBarLabel: "ปริ้นเตอร์",
-          tabBarIcon: () => <Text style={{ fontSize: 20 }}>🖨️</Text>,
-        }}
+        options={{ tabBarLabel: "ปริ้นเตอร์", tabBarIcon: () => <Text style={{ fontSize: 20 }}>🖨️</Text> }}
       />
     </Tab.Navigator>
   );
@@ -84,18 +69,22 @@ export default function RootNavigator() {
           <Stack.Screen name="Login" component={LoginScreen} />
         ) : userRole === "admin" ? (
           <>
-            <Stack.Screen name="AdminHome" component={AdminTabs} />
-            <Stack.Screen name="AddProduct" component={AddProductScreen} />
-            <Stack.Screen name="AddCustomer" component={AddCustomerScreen} />
+            <Stack.Screen name="AdminHome"       component={AdminTabs} />
+            <Stack.Screen name="AddProduct"      component={AddProductScreen} />
+            <Stack.Screen name="AddCustomer"     component={AddCustomerScreen} />
+            <Stack.Screen name="ProductList"     component={ProductListScreen} />
+            <Stack.Screen name="CustomerList"    component={CustomerListScreen} />
+            <Stack.Screen name="AllOrders"       component={AllOrdersScreen} />
+            <Stack.Screen name="PrinterSettings" component={PrinterSettingsScreen} />
           </>
         ) : userRole === "stock" ? (
           <>
-            <Stack.Screen name="POS" component={POSScreen} />
+            <Stack.Screen name="POS"             component={POSScreen} />
             <Stack.Screen name="PrinterSettings" component={PrinterSettingsScreen} />
           </>
         ) : (
           <>
-            <Stack.Screen name="Order" component={OrderScreen} />
+            <Stack.Screen name="Order"           component={OrderScreen} />
           </>
         )}
       </Stack.Navigator>
