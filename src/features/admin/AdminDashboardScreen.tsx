@@ -22,6 +22,8 @@ export default function AdminDashboardScreen({ navigation }: any) {
   });
   const [productCount, setProductCount] = React.useState(0);
   const [customerCount, setCustomerCount] = React.useState(0);
+  const [cashierPin, setCashierPin] = React.useState('----');
+  const [showPin, setShowPin] = React.useState(false);
 
   useFocusEffect(useCallback(() => {
     try {
@@ -29,6 +31,9 @@ export default function AdminDashboardScreen({ navigation }: any) {
       setStats(s);
       setProductCount(DB.getAllProducts().length);
       setCustomerCount(DB.getAllCustomers().length);
+      // ดึง Cashier PIN ปัจจุบัน (หมุนอัตโนมัติถ้าครบ 5 วัน)
+      const pin = DB.rotateCashierPinIfNeeded();
+      setCashierPin(pin);
     } catch (e) {
       console.error('Dashboard load error:', e);
     }
@@ -79,32 +84,48 @@ export default function AdminDashboardScreen({ navigation }: any) {
           <Text style={s.shopSub}>Mae Sot · {t('dashboard','th')}{lang !== 'th' ? ` / ${t('dashboard',lang)}` : ''}</Text>
         </View>
 
-        {/* ── Stats Grid ── */}
+        {/* ── Stats Grid (กดได้เพื่อ drill-down) ── */}
         <View style={s.statsGrid}>
-          <View style={[s.statCard, { backgroundColor: '#27ae60' }]}>
+          <TouchableOpacity
+            style={[s.statCard, { backgroundColor: '#27ae60' }]}
+            onPress={() => navigation.navigate('AllOrders')}
+            activeOpacity={0.85}
+          >
             <Text style={s.statIcon}>💰</Text>
             <Text style={s.statVal}>฿{stats.revenueToday.toLocaleString()}</Text>
             <Text style={s.statLbl}>{t('revenue_today','th')}</Text>
             {lang !== 'th' && <Text style={s.statSub}>{t('revenue_today', lang)}</Text>}
-          </View>
-          <View style={[s.statCard, { backgroundColor: '#2980b9' }]}>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.statCard, { backgroundColor: '#2980b9' }]}
+            onPress={() => navigation.navigate('AllOrders')}
+            activeOpacity={0.85}
+          >
             <Text style={s.statIcon}>📋</Text>
             <Text style={s.statVal}>{stats.ordersToday}</Text>
             <Text style={s.statLbl}>{t('orders_today','th')}</Text>
             {lang !== 'th' && <Text style={s.statSub}>{t('orders_today', lang)}</Text>}
-          </View>
-          <View style={[s.statCard, { backgroundColor: '#e67e22' }]}>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.statCard, { backgroundColor: '#e67e22' }]}
+            onPress={() => navigation.navigate('AllOrders')}
+            activeOpacity={0.85}
+          >
             <Text style={s.statIcon}>⏳</Text>
             <Text style={s.statVal}>{stats.pendingOrders}</Text>
             <Text style={s.statLbl}>{t('pending_orders','th')}</Text>
             {lang !== 'th' && <Text style={s.statSub}>{t('pending_orders', lang)}</Text>}
-          </View>
-          <View style={[s.statCard, { backgroundColor: '#c0392b' }]}>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.statCard, { backgroundColor: '#c0392b' }]}
+            onPress={() => navigation.navigate('CustomerList')}
+            activeOpacity={0.85}
+          >
             <Text style={s.statIcon}>⚠️</Text>
             <Text style={s.statVal}>฿{stats.overdueCredit.toLocaleString()}</Text>
             <Text style={s.statLbl}>{t('overdue_credit','th')}</Text>
             {lang !== 'th' && <Text style={s.statSub}>{t('overdue_credit', lang)}</Text>}
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* ── Quick Summary ── */}
@@ -121,6 +142,31 @@ export default function AdminDashboardScreen({ navigation }: any) {
             <Text style={s.summaryLbl}>{t('customers','th')}</Text>
             {lang !== 'th' && <Text style={s.summarySub}>{t('customers', lang)}</Text>}
           </View>
+        </View>
+
+        {/* ── Cashier PIN Card (Admin Only) ── */}
+        <View style={s.pinCard}>
+          <View style={s.pinCardLeft}>
+            <Text style={s.pinCardIcon}>🔐</Text>
+            <View>
+              <Text style={s.pinCardTitle}>
+                รหัสแคชเชียร์วันนี้{lang !== 'th' ? ` / Cashier PIN` : ''}
+              </Text>
+              <Text style={s.pinCardSub}>
+                หมุนใหม่ทุก 5 วัน • เฉพาะ Admin เท่านั้น
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={s.pinToggleBtn}
+            onPress={() => setShowPin(v => !v)}
+            activeOpacity={0.75}
+          >
+            <Text style={s.pinValue}>
+              {showPin ? cashierPin : '● ● ● ●'}
+            </Text>
+            <Text style={s.pinEyeIcon}>{showPin ? '🙈' : '👁️'}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* ── Management Menu ── */}
@@ -219,4 +265,13 @@ const s = StyleSheet.create({
   menuTitleTh: { fontSize: 14, fontWeight: 'bold', color: '#333' },
   menuTitleSub: { fontSize: 11, color: '#888', marginTop: 2 },
   menuDesc: { fontSize: 11, color: '#aaa', marginTop: 4 },
+  // Cashier PIN Card
+  pinCard: { marginHorizontal: 10, marginBottom: 8, backgroundColor: '#1a252f', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', elevation: 3 },
+  pinCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  pinCardIcon: { fontSize: 28 },
+  pinCardTitle: { fontSize: 13, fontWeight: 'bold', color: '#f39c12' },
+  pinCardSub: { fontSize: 10, color: 'rgba(255,255,255,0.55)', marginTop: 2 },
+  pinToggleBtn: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 14, minWidth: 90 },
+  pinValue: { fontSize: 22, fontWeight: 'bold', color: '#fff', letterSpacing: 4, textAlign: 'center' },
+  pinEyeIcon: { fontSize: 16, marginTop: 4 },
 });

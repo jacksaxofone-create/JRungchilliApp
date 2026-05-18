@@ -32,6 +32,7 @@ export function initDB(): void {
   db.execute(`CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY, value TEXT
   )`);
+
   db.execute(`CREATE TABLE IF NOT EXISTS products (
     id TEXT PRIMARY KEY,
     name_th TEXT, name_mm TEXT, name_en TEXT, name_cn TEXT,
@@ -42,6 +43,7 @@ export function initDB(): void {
     is_active INTEGER DEFAULT 1,
     updated_at TEXT
   )`);
+
   db.execute(`CREATE TABLE IF NOT EXISTS customers (
     id TEXT PRIMARY KEY,
     shop_name TEXT, phone TEXT, notes TEXT, password TEXT,
@@ -49,8 +51,11 @@ export function initDB(): void {
     credit_limit REAL DEFAULT 0,
     credit_used REAL DEFAULT 0,
     is_active INTEGER DEFAULT 1,
-    created_at TEXT
+    created_at TEXT,
+    image_uri TEXT DEFAULT ''
   )`);
+
+  // orders table — full schema with pack fields + order_type
   db.execute(`CREATE TABLE IF NOT EXISTS orders (
     id TEXT PRIMARY KEY,
     order_number TEXT, customer_id TEXT,
@@ -58,16 +63,30 @@ export function initDB(): void {
     subtotal REAL, discount REAL, total REAL,
     payment_method TEXT, payment_status TEXT,
     status TEXT, notes TEXT,
+    order_type TEXT DEFAULT 'walk_in',
+    pack_status TEXT DEFAULT 'waiting',
+    scheduled_date TEXT DEFAULT '',
+    confirmed_by TEXT DEFAULT '',
+    confirmed_at TEXT DEFAULT '',
+    packed_at TEXT DEFAULT '',
     created_at TEXT, updated_at TEXT
   )`);
+
+  // order_items — full schema with packing fields
   db.execute(`CREATE TABLE IF NOT EXISTS order_items (
     id TEXT PRIMARY KEY,
     order_id TEXT, product_id TEXT,
     product_name_th TEXT, product_name_mm TEXT,
     product_name_en TEXT, product_name_cn TEXT,
     quantity_kg REAL, unit_price REAL, total_price REAL,
-    is_packed INTEGER DEFAULT 0
+    requested_kg REAL DEFAULT 0,
+    actual_kg REAL DEFAULT 0,
+    actual_weight_kg REAL DEFAULT 0,
+    item_notes TEXT DEFAULT '',
+    is_packed INTEGER DEFAULT 0,
+    packed_at TEXT DEFAULT ''
   )`);
+
   db.execute(`CREATE TABLE IF NOT EXISTS credit_records (
     id TEXT PRIMARY KEY,
     customer_id TEXT, customer_name TEXT,
@@ -78,13 +97,51 @@ export function initDB(): void {
     created_at TEXT
   )`);
 
+  // sub_customers — รายชื่อลูกค้าของผู้ค้าส่ง (ลูกค้าของลูกค้า)
+  db.execute(`CREATE TABLE IF NOT EXISTS sub_customers (
+    id TEXT PRIMARY KEY,
+    owner_customer_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(owner_customer_id, name)
+  )`);
+  db.execute(`CREATE INDEX IF NOT EXISTS idx_sub_customers_owner ON sub_customers(owner_customer_id)`);
+
+  // Migrate existing tables — add missing columns safely
+  const safeAdd = (table: string, col: string, type: string, def: string = '') => {
+    try {
+      db.execute(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}${def ? ' DEFAULT ' + def : ''}`);
+    } catch (_) { /* column already exists — ignore */ }
+  };
+
+  // orders migrations
+  safeAdd('orders', 'order_type', 'TEXT', "'walk_in'");
+  safeAdd('orders', 'pack_status', 'TEXT', "'waiting'");
+  safeAdd('orders', 'scheduled_date', 'TEXT', "''");
+  safeAdd('orders', 'confirmed_by', 'TEXT', "''");
+  safeAdd('orders', 'confirmed_at', 'TEXT', "''");
+  safeAdd('orders', 'packed_at', 'TEXT', "''");
+
+  // order_items migrations
+  safeAdd('order_items', 'requested_kg', 'REAL', '0');
+  safeAdd('order_items', 'actual_kg', 'REAL', '0');
+  safeAdd('order_items', 'actual_weight_kg', 'REAL', '0');
+  safeAdd('order_items', 'item_notes', 'TEXT', "''");
+  safeAdd('order_items', 'packed_at', 'TEXT', "''");
+
+  // customers migrations
+  safeAdd('customers', 'image_uri', 'TEXT', "''");
+
   // default settings
   const defaults: Record<string, string> = {
-    admin_pin:    '0000',
-    shop_name:    'เจรุ่งชิลลี่',
-    shop_address: 'แม่สอด',
-    language:     'th',
-    change_fund:  '500',
+    admin_pin:      '4840402036',
+    cashier_pin:    '1234',
+    shop_name:      'เจรุ่งชิลลี่',
+    shop_address:   'แม่สอด',
+    language:       'th',
+    change_fund:    '500',
+    cashier_pin_rotate_days: '5',
+    cashier_pin_last_changed: new Date().toISOString().split('T')[0],
   };
   for (const [k, v] of Object.entries(defaults)) {
     db.execute(`INSERT OR IGNORE INTO settings (key,value) VALUES (?,?)`, [k, v]);
@@ -95,7 +152,6 @@ export function initDB(): void {
   const isSeeded  = seedCheck.length > 0 && seedCheck[0]?.value === '1';
 
   if (!isSeeded) {
-    // ลบของเก่าทั้งหมดก่อน seed ใหม่
     db.execute(`DELETE FROM products`);
     db.execute(`DELETE FROM customers`);
 
@@ -139,15 +195,15 @@ export function initDB(): void {
 
     db.execute(
       `INSERT INTO customers
-       (id,shop_name,phone,notes,password,customer_type,credit_limit,credit_used,is_active,created_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?)`,
-      ['c001','ร้านแม่สอดเจริญ','055-111-222','ลูกค้าประจำ','1234','wholesale',5000,0,1,now]
+       (id,shop_name,phone,notes,password,customer_type,credit_limit,credit_used,is_active,created_at,image_uri)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+      ['c001','ร้านแม่สอดเจริญ','055-111-222','ลูกค้าประจำ','1234','wholesale',5000,0,1,now,'']
     );
     db.execute(
       `INSERT INTO customers
-       (id,shop_name,phone,notes,password,customer_type,credit_limit,credit_used,is_active,created_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?)`,
-      ['c002','ร้านสมชาย','055-333-444','','5678','retail',2000,0,1,now]
+       (id,shop_name,phone,notes,password,customer_type,credit_limit,credit_used,is_active,created_at,image_uri)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+      ['c002','ร้านสมชาย','055-333-444','','5678','retail',2000,0,1,now,'']
     );
 
     db.execute(`INSERT OR REPLACE INTO settings (key,value) VALUES ('seeded','1')`);

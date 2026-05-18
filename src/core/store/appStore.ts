@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { Lang } from '../i18n/translations';
 
 // ── Types ──
-export type UserRole = 'admin' | 'stock' | 'cashier' | null;
+export type UserRole = 'admin' | 'stock' | 'cashier' | 'customer' | null;
 
 export interface Product {
   id: string;
@@ -85,6 +85,7 @@ interface AppState {
   lang: Lang;
   userRole: UserRole;
   isAuthenticated: boolean;
+  currentCustomer: Customer | null;
 
   // Settings
   settings: AppSettings;
@@ -110,6 +111,7 @@ interface AppState {
   setLang: (lang: Lang) => void;
   setUserRole: (role: UserRole) => void;
   setAuthenticated: (v: boolean) => void;
+  setCurrentCustomer: (customer: Customer | null) => void;
   logout: () => void;
 
   // ── Actions: Settings ──
@@ -143,6 +145,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   lang: 'th',
   userRole: null,
   isAuthenticated: false,
+  currentCustomer: null,
 
   // Settings
   settings: {
@@ -173,7 +176,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   setLang: (lang) => set({ lang }),
   setUserRole: (role) => set({ userRole: role, isAuthenticated: role !== null }),
   setAuthenticated: (v) => set({ isAuthenticated: v }),
-  logout: () => set({ userRole: null, isAuthenticated: false, cart: [] }),
+  setCurrentCustomer: (customer) => set({ currentCustomer: customer }),
+  logout: () => set({ userRole: null, isAuthenticated: false, cart: [], currentCustomer: null }),
 
   // Settings actions
   setSettings: (s) => set((state) => ({

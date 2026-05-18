@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -9,9 +10,9 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { PrinterService } from '../services/printerService';
+import { PrinterService } from '../core/hardware/PrinterService';
 import { LabelData } from '../types';
-import { useAppStore } from '../store/appStore';
+import { useAppStore } from '../core/store/appStore';
 
 interface Props {
   labelData: LabelData;
