@@ -8,6 +8,7 @@ import { launchImageLibrary, launchCamera } from "react-native-image-picker";
 import { useAppStore } from "../../core/store/appStore";
 import { DB } from "../../core/database/DatabaseService";
 import { t, Lang } from "../../core/i18n/translations";
+import { CHILLI, shadow } from "../../core/theme";
 
 const CATEGORIES = ['พริก','เครื่องเทศ','ผัก','ผลไม้','อื่นๆ'];
 const UNITS      = ['กก.','ก.','ลิตร','ชิ้น'];
@@ -134,7 +135,7 @@ export default function AddProductScreen() {
 
   return (
     <SafeAreaView style={s.safe}>
-      <StatusBar backgroundColor="#8e44ad" barStyle="light-content" />
+      <StatusBar backgroundColor={CHILLI.dark} barStyle="light-content" />
 
       {/* ── Header ── */}
       <View style={s.header}>
@@ -152,9 +153,7 @@ export default function AddProductScreen() {
 
         {/* ── รูปสินค้า ── */}
         <View style={s.card}>
-          <Text style={s.cardTitle}>
-            📷 รูปสินค้า / Product Image
-          </Text>
+          <Text style={s.cardTitle}>📷 รูปสินค้า / Product Image</Text>
           <TouchableOpacity style={s.imageBox} onPress={handlePickImage} activeOpacity={0.8}>
             {imageUri ? (
               <>
@@ -183,20 +182,40 @@ export default function AddProductScreen() {
           <Text style={s.cardTitle}>🏷️ ชื่อสินค้า / Product Name</Text>
 
           <Text style={s.lbl}>🇹🇭 {t('product_name_th','th')} *</Text>
-          <TextInput style={s.input} value={nameTh} onChangeText={setNameTh}
-            placeholder="ชื่อภาษาไทย (บังคับ)" placeholderTextColor="#bbb" />
+          <TextInput
+            style={s.input}
+            value={nameTh}
+            onChangeText={setNameTh}
+            placeholder="ชื่อภาษาไทย (บังคับ)"
+            placeholderTextColor="#bbb"
+          />
 
           <Text style={s.lbl}>🇲🇲 {t('product_name_mm','th')}</Text>
-          <TextInput style={s.input} value={nameMm} onChangeText={setNameMm}
-            placeholder="မြန်မာဘာသာ (optional)" placeholderTextColor="#bbb" />
+          <TextInput
+            style={s.input}
+            value={nameMm}
+            onChangeText={setNameMm}
+            placeholder="မြန်မာဘာသာ (optional)"
+            placeholderTextColor="#bbb"
+          />
 
           <Text style={s.lbl}>🇬🇧 {t('product_name_en','th')}</Text>
-          <TextInput style={s.input} value={nameEn} onChangeText={setNameEn}
-            placeholder="English name (optional)" placeholderTextColor="#bbb" />
+          <TextInput
+            style={s.input}
+            value={nameEn}
+            onChangeText={setNameEn}
+            placeholder="English name (optional)"
+            placeholderTextColor="#bbb"
+          />
 
           <Text style={s.lbl}>🇨🇳 {t('product_name_cn','th')}</Text>
-          <TextInput style={s.input} value={nameCn} onChangeText={setNameCn}
-            placeholder="中文名称 (optional)" placeholderTextColor="#bbb" />
+          <TextInput
+            style={s.input}
+            value={nameCn}
+            onChangeText={setNameCn}
+            placeholder="中文名称 (optional)"
+            placeholderTextColor="#bbb"
+          />
         </View>
 
         {/* ── ราคา ── */}
@@ -204,31 +223,61 @@ export default function AddProductScreen() {
           <Text style={s.cardTitle}>💰 ราคา / Price</Text>
           <View style={s.row2}>
             <View style={s.half}>
-              <Text style={s.lbl}>🛒 {t('price_retail','th')}{lang !== 'th' ? `\n${t('price_retail',lang)}` : ''}</Text>
-              <TextInput style={s.input} value={priceRetail} onChangeText={setPriceRetail}
-                keyboardType="decimal-pad" placeholder="0.00" placeholderTextColor="#bbb" />
+              <Text style={s.lbl}>
+                🛒 {t('price_retail','th')}{lang !== 'th' ? `\n${t('price_retail',lang)}` : ''}
+              </Text>
+              <TextInput
+                style={s.input}
+                value={priceRetail}
+                onChangeText={setPriceRetail}
+                keyboardType="decimal-pad"
+                placeholder="0.00"
+                placeholderTextColor="#bbb"
+              />
             </View>
             <View style={s.half}>
-              <Text style={s.lbl}>📦 {t('price_wholesale','th')}{lang !== 'th' ? `\n${t('price_wholesale',lang)}` : ''}</Text>
-              <TextInput style={s.input} value={priceWholesale} onChangeText={setPriceWholesale}
-                keyboardType="decimal-pad" placeholder="0.00" placeholderTextColor="#bbb" />
+              <Text style={s.lbl}>
+                📦 {t('price_wholesale','th')}{lang !== 'th' ? `\n${t('price_wholesale',lang)}` : ''}
+              </Text>
+              <TextInput
+                style={[s.input, s.inputWholesale]}
+                value={priceWholesale}
+                onChangeText={setPriceWholesale}
+                keyboardType="decimal-pad"
+                placeholder="0.00"
+                placeholderTextColor="#bbb"
+              />
             </View>
           </View>
         </View>
 
         {/* ── สต็อก ── */}
         <View style={s.card}>
-          <Text style={s.cardTitle}>📊 {t('stock_qty','th')}{lang !== 'th' ? ` / ${t('stock_qty',lang)}` : ''}</Text>
+          <Text style={s.cardTitle}>
+            📊 {t('stock_qty','th')}{lang !== 'th' ? ` / ${t('stock_qty',lang)}` : ''}
+          </Text>
           <View style={s.row2}>
             <View style={s.half}>
               <Text style={s.lbl}>สต็อกปัจจุบัน / Current</Text>
-              <TextInput style={s.input} value={stockKg} onChangeText={setStockKg}
-                keyboardType="decimal-pad" placeholder="0" placeholderTextColor="#bbb" />
+              <TextInput
+                style={s.input}
+                value={stockKg}
+                onChangeText={setStockKg}
+                keyboardType="decimal-pad"
+                placeholder="0"
+                placeholderTextColor="#bbb"
+              />
             </View>
             <View style={s.half}>
               <Text style={s.lbl}>ขั้นต่ำ / Min Stock</Text>
-              <TextInput style={s.input} value={minStock} onChangeText={setMinStock}
-                keyboardType="decimal-pad" placeholder="10" placeholderTextColor="#bbb" />
+              <TextInput
+                style={s.input}
+                value={minStock}
+                onChangeText={setMinStock}
+                keyboardType="decimal-pad"
+                placeholder="10"
+                placeholderTextColor="#bbb"
+              />
             </View>
           </View>
         </View>
@@ -238,7 +287,12 @@ export default function AddProductScreen() {
           <Text style={s.cardTitle}>📏 หน่วย / Unit</Text>
           <View style={s.chipRow}>
             {UNITS.map(u => (
-              <TouchableOpacity key={u} style={[s.chip, unit === u && s.chipOn]} onPress={() => setUnit(u)}>
+              <TouchableOpacity
+                key={u}
+                style={[s.chip, unit === u && s.chipOn]}
+                onPress={() => setUnit(u)}
+                activeOpacity={0.75}
+              >
                 <Text style={[s.chipTxt, unit === u && s.chipTxtOn]}>{u}</Text>
               </TouchableOpacity>
             ))}
@@ -250,7 +304,12 @@ export default function AddProductScreen() {
           <Text style={s.cardTitle}>🗂️ หมวดหมู่ / Category</Text>
           <View style={s.chipRow}>
             {CATEGORIES.map(c => (
-              <TouchableOpacity key={c} style={[s.chip, category === c && s.chipOn]} onPress={() => setCategory(c)}>
+              <TouchableOpacity
+                key={c}
+                style={[s.chip, category === c && s.chipOn]}
+                onPress={() => setCategory(c)}
+                activeOpacity={0.75}
+              >
                 <Text style={[s.chipTxt, category === c && s.chipTxtOn]}>{c}</Text>
               </TouchableOpacity>
             ))}
@@ -263,6 +322,7 @@ export default function AddProductScreen() {
             style={[s.saveBtn, saving && { opacity: 0.6 }]}
             onPress={handleSave}
             disabled={saving}
+            activeOpacity={0.85}
           >
             {saving
               ? <ActivityIndicator color="#fff" />
@@ -272,54 +332,141 @@ export default function AddProductScreen() {
                 </>
             }
           </TouchableOpacity>
-          <TouchableOpacity style={s.cancelBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={s.cancelBtn}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.8}
+          >
             <Text style={s.cancelBtnTxt}>
               {t('cancel','th')}{lang !== 'th' ? ` / ${t('cancel',lang)}` : ''}
             </Text>
           </TouchableOpacity>
         </View>
 
-        <View style={{ height: 24 }} />
+        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f0f0f0' },
-  header: { backgroundColor: '#8e44ad', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, elevation: 4 },
-  backBtn: { width: 60, paddingVertical: 6 },
-  backTxt: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  safe:   { flex: 1, backgroundColor: CHILLI.cream },
+
+  // ── Header ──
+  header: {
+    backgroundColor: CHILLI.dark,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    ...shadow(4),
+  },
+  backBtn:      { width: 60, paddingVertical: 6 },
+  backTxt:      { color: '#fff', fontSize: 15, fontWeight: '600' },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 15, fontWeight: 'bold', color: '#fff' },
-  headerSub: { fontSize: 11, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
+  headerTitle:  { fontSize: 15, fontWeight: 'bold', color: '#fff' },
+  headerSub:    { fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+
+  // ── Body ──
   body: { flex: 1 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 14, margin: 10, marginBottom: 0, elevation: 2 },
-  cardTitle: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 12 },
-  lbl: { fontSize: 12, color: '#555', fontWeight: '600', marginBottom: 5, marginTop: 8, lineHeight: 18 },
-  input: { borderWidth: 1.5, borderColor: '#e0e0e0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#222', backgroundColor: '#fafafa' },
+
+  // ── Card ──
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 14,
+    margin: 10,
+    marginBottom: 0,
+    ...shadow(2),
+  },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: CHILLI.dark,
+    marginBottom: 12,
+  },
+
+  // ── Label + Input ──
+  lbl: {
+    fontSize: 12,
+    color: '#555',
+    fontWeight: '600',
+    marginBottom: 5,
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  input: {
+    borderWidth: 1.5,
+    borderColor: '#e8d5c4',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: CHILLI.dark,
+    backgroundColor: CHILLI.cream,
+  },
+  // wholesale price input มี accent สี orange ด้านซ้าย
+  inputWholesale: {
+    borderLeftWidth: 3,
+    borderLeftColor: CHILLI.orange,
+  },
+
   row2: { flexDirection: 'row', gap: 10 },
   half: { flex: 1 },
+
+  // ── Chips ──
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: '#ddd', backgroundColor: '#f9f9f9' },
-  chipOn: { borderColor: '#8e44ad', backgroundColor: '#f3e5f5' },
-  chipTxt: { fontSize: 13, color: '#555', fontWeight: '600' },
-  chipTxtOn: { color: '#8e44ad', fontWeight: 'bold' },
-  // Image
-  imageBox: { width: '100%', height: 180, borderRadius: 12, overflow: 'hidden', borderWidth: 2, borderColor: '#e0e0e0', borderStyle: 'dashed' },
-  productImage: { width: '100%', height: '100%' },
-  imageOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.45)', paddingVertical: 8, alignItems: 'center' },
-  imageOverlayTxt: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
-  imagePlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fafafa' },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#ddd',
+    backgroundColor: '#f9f6f3',
+  },
+  chipOn: {
+    borderColor: CHILLI.red,
+    backgroundColor: '#fff0ee',
+  },
+  chipTxt:   { fontSize: 13, color: '#666', fontWeight: '600' },
+  chipTxtOn: { color: CHILLI.red, fontWeight: 'bold' },
+
+  // ── Image ──
+  imageBox: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#e8d5c4',
+    borderStyle: 'dashed',
+  },
+  productImage:       { width: '100%', height: '100%' },
+  imageOverlay:       { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.45)', paddingVertical: 8, alignItems: 'center' },
+  imageOverlayTxt:    { color: '#fff', fontSize: 13, fontWeight: 'bold' },
+  imagePlaceholder:   { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: CHILLI.cream },
   imagePlaceholderIcon: { fontSize: 44, marginBottom: 8 },
-  imagePlaceholderTxt: { fontSize: 14, color: '#888', fontWeight: '600' },
-  imagePlaceholderSub: { fontSize: 12, color: '#bbb', marginTop: 3 },
-  removeImgBtn: { marginTop: 8, alignItems: 'center', paddingVertical: 6 },
-  removeImgTxt: { fontSize: 13, color: '#e74c3c', fontWeight: '600' },
-  footer: { margin: 10, marginBottom: 0, gap: 8 },
-  saveBtn: { backgroundColor: '#8e44ad', borderRadius: 12, paddingVertical: 15, alignItems: 'center', elevation: 3 },
+  imagePlaceholderTxt:  { fontSize: 14, color: '#888', fontWeight: '600' },
+  imagePlaceholderSub:  { fontSize: 12, color: '#bbb', marginTop: 3 },
+  removeImgBtn:    { marginTop: 8, alignItems: 'center', paddingVertical: 6 },
+  removeImgTxt:    { fontSize: 13, color: CHILLI.red, fontWeight: '600' },
+
+  // ── Footer Buttons ──
+  footer:  { margin: 10, marginBottom: 0, gap: 8 },
+  saveBtn: {
+    backgroundColor: CHILLI.red,
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    ...shadow(3),
+  },
   saveBtnTxt: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   saveBtnSub: { color: 'rgba(255,255,255,0.8)', fontSize: 11, marginTop: 2 },
-  cancelBtn: { backgroundColor: '#f0f0f0', borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
-  cancelBtnTxt: { color: '#555', fontWeight: '600', fontSize: 14 },
+  cancelBtn:  {
+    backgroundColor: '#f0ebe6',
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  cancelBtnTxt: { color: '#666', fontWeight: '600', fontSize: 14 },
 });

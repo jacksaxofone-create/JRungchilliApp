@@ -1,3 +1,15 @@
+/**
+ * 🌶️ POSScreen — หน้าขายหน้าร้าน (Walk-in Sale)
+ * ─────────────────────────────────────────────
+ * ฟีเจอร์:
+ *  - ค้นหาสินค้าทุกภาษา
+ *  - ค้นหาลูกค้า → auto-switch wholesale price
+ *  - คำนวณ น้ำหนัก × ราคา → ยอด
+ *  - ตะกร้าสินค้า + ส่วนลด
+ *  - ชำระเงิน: เงินสด / โอน / เครดิต
+ *  - พิมพ์สติกเกอร์
+ *  - Chilli brand theme
+ */
 import React, { useState, useCallback } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, TextInput,
@@ -8,6 +20,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAppStore } from "../../core/store/appStore";
 import { DB } from "../../core/database/DatabaseService";
 import { t, getProductName, Lang } from "../../core/i18n/translations";
+import { CHILLI, shadow } from "../../core/theme";
 
 type PayMethod = 'cash' | 'transfer' | 'credit';
 
@@ -27,8 +40,6 @@ const LANGS: { code: Lang; flag: string }[] = [
   { code: 'cn', flag: '🇨🇳' },
 ];
 
-// ชื่อหลัก = ภาษาไทยเสมอ
-// ชื่อรอง  = ภาษาที่เลือก (ถ้าเลือก TH ไม่แสดงซ้ำ)
 function ProductName({ product, lang }: { product: any; lang: Lang }) {
   const secondary = lang !== 'th' ? getProductName(product, lang) : '';
   return (
@@ -38,36 +49,40 @@ function ProductName({ product, lang }: { product: any; lang: Lang }) {
     </View>
   );
 }
-
 const pn = StyleSheet.create({
-  primary:   { fontSize: 13, fontWeight: 'bold', color: '#333' },
-  secondary: { fontSize: 11, color: '#888', marginTop: 1 },
+  primary:   { fontSize: 13, fontWeight: '700', color: CHILLI.textPrimary },
+  secondary: { fontSize: 10, color: CHILLI.textSecondary, marginTop: 1 },
 });
 
 export default function POSScreen() {
   const { lang, setLang, logout, settings } = useAppStore();
-  const [products, setProducts]         = useState<any[]>([]);
-  const [cart, setCart]                 = useState<CartItem[]>([]);
-  const [search, setSearch]             = useState('');
-  const [loading, setLoading]           = useState(true);
-  const [processing, setProcessing]     = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [manualWeight, setManualWeight] = useState('');
-  const [priceType, setPriceType]       = useState<'retail' | 'wholesale'>('retail');
-  const [showPayModal, setShowPayModal] = useState(false);
-  const [showStickerModal, setShowStickerModal] = useState(false);
-  const [payMethod, setPayMethod]       = useState<PayMethod>('cash');
-  const [cashReceived, setCashReceived] = useState('');
-  const [customerName, setCustomerName] = useState('');
-  const [notes, setNotes]               = useState('');
-  const [discount, setDiscount]         = useState('0');
-  const [stickerProduct, setStickerProduct] = useState<any>(null);
+
+  // ─── State ───────────────────────────────────────────────
+  const [products, setProducts]                   = useState<any[]>([]);
+  const [cart, setCart]                           = useState<CartItem[]>([]);
+  const [search, setSearch]                       = useState('');
+  const [loading, setLoading]                     = useState(true);
+  const [processing, setProcessing]               = useState(false);
+  const [selectedProduct, setSelectedProduct]     = useState<any>(null);
+  const [manualWeight, setManualWeight]           = useState('');
+  const [priceType, setPriceType]                 = useState<'retail' | 'wholesale'>('retail');
+  const [showPayModal, setShowPayModal]           = useState(false);
+  const [showStickerModal, setShowStickerModal]   = useState(false);
+  const [payMethod, setPayMethod]                 = useState<PayMethod>('cash');
+  const [cashReceived, setCashReceived]           = useState('');
+  const [notes, setNotes]                         = useState('');
+  const [discount, setDiscount]                   = useState('0');
+  const [stickerProduct, setStickerProduct]       = useState<any>(null);
+
+  // ─── Customer search + auto-wholesale ───────────────────
+  const [customerName, setCustomerName]           = useState('');
+  const [selectedCustomer, setSelectedCustomer]   = useState<any>(null);
+  const [customerSuggestions, setCustomerSuggestions] = useState<any[]>([]);
 
   useFocusEffect(useCallback(() => {
     setLoading(true);
     try {
-      const rows = DB.getAllProducts();
-      setProducts(rows.filter((p: any) => p.is_active === 1));
+      setProducts(DB.getAllProducts().filter((p: any) => p.is_active === 1));
     } catch (e) {
       console.error('Load products error:', e);
     } finally {
@@ -75,32 +90,59 @@ export default function POSScreen() {
     }
   }, []));
 
-  // label helper: Thai / SecondLang (ถ้าเลือก TH แสดงแค่ Thai)
   const lbl = (key: string) =>
     lang !== 'th' ? `${t(key, 'th')} / ${t(key, lang)}` : t(key, 'th');
 
+  // ─── Customer search logic ────────────────────────────────
+  const onCustomerSearch = (txt: string) => {
+    setCustomerName(txt);
+    setSelectedCustomer(null);
+    if (txt.length >= 1) {
+      try {
+        const results = DB.searchCustomers(txt);
+        setCustomerSuggestions(results);
+      } catch { setCustomerSuggestions([]); }
+    } else {
+      setCustomerSuggestions([]);
+      setPriceType('retail'); // reset to retail when cleared
+    }
+  };
+
+  const selectCustomer = (c: any) => {
+    setCustomerName(c.shop_name);
+    setSelectedCustomer(c);
+    setCustomerSuggestions([]);
+    // 🔑 Auto-switch to wholesale price for wholesale customers
+    if (c.customer_type === 'wholesale') {
+      setPriceType('wholesale');
+    }
+  };
+
+  const clearCustomer = () => {
+    setCustomerName('');
+    setSelectedCustomer(null);
+    setCustomerSuggestions([]);
+    setPriceType('retail');
+  };
+
+  // ─── Calculations ─────────────────────────────────────────
   const activeWeight = parseFloat(manualWeight) || 0;
   const unitPrice    = selectedProduct
     ? (priceType === 'wholesale' ? selectedProduct.price_wholesale : selectedProduct.price_retail)
     : 0;
-  const lineTotal  = activeWeight * unitPrice;
-  const subtotal   = cart.reduce((s, c) => s + c.quantity_kg * c.unit_price, 0);
+  const lineTotal   = activeWeight * unitPrice;
+  const subtotal    = cart.reduce((s, c) => s + c.quantity_kg * c.unit_price, 0);
   const discountNum = parseFloat(discount) || 0;
-  const total      = Math.max(0, subtotal - discountNum);
-  const cashNum    = parseFloat(cashReceived) || 0;
-  const change     = cashNum - total;
+  const total       = Math.max(0, subtotal - discountNum);
+  const cashNum     = parseFloat(cashReceived) || 0;
+  const change      = cashNum - total;
 
+  // ─── Cart actions ─────────────────────────────────────────
   const addToCart = () => {
-    if (!selectedProduct) {
-      Alert.alert(t('warning','th'), lbl('select_product')); return;
-    }
-    if (activeWeight <= 0) {
-      Alert.alert(t('warning','th'), lbl('enter_weight')); return;
-    }
+    if (!selectedProduct) { Alert.alert(t('warning','th'), lbl('select_product')); return; }
+    if (activeWeight <= 0) { Alert.alert(t('warning','th'), lbl('enter_weight')); return; }
     setCart(prev => {
-      const idx = prev.findIndex(
-        c => c.product.id === selectedProduct.id && c.price_type === priceType
-      );
+      const idx = prev.findIndex(c => c.product.id === selectedProduct.id && c.price_type === priceType);
       if (idx >= 0) {
         const updated = [...prev];
         updated[idx] = {
@@ -120,25 +162,24 @@ export default function POSScreen() {
 
   const clearCart = () => setCart([]);
 
+  // ─── Sticker ─────────────────────────────────────────────
   const handlePrintSticker = () => {
     if (!selectedProduct) { Alert.alert(t('warning','th'), lbl('select_product')); return; }
     if (activeWeight <= 0) { Alert.alert(t('warning','th'), lbl('enter_weight')); return; }
     setStickerProduct({
-      product: selectedProduct,
-      weight: activeWeight,
-      unitPrice,
-      total: lineTotal,
+      product: selectedProduct, weight: activeWeight,
+      unitPrice, total: lineTotal,
       shopName: settings?.shop_name || 'J.Rung Chilli',
       date: new Date().toLocaleDateString('th-TH'),
     });
     setShowStickerModal(true);
   };
 
+  // ─── Checkout ─────────────────────────────────────────────
   const handleCheckout = () => {
     if (cart.length === 0) { Alert.alert(t('warning','th'), lbl('no_items')); return; }
     if (payMethod === 'cash' && cashNum < total) {
-      Alert.alert(t('warning','th'), `${lbl('received')} ไม่ครบ ต้องชำระ ฿${total.toFixed(2)}`);
-      return;
+      Alert.alert(t('warning','th'), `${lbl('received')} ไม่ครบ ต้องชำระ ฿${total.toFixed(2)}`); return;
     }
     setProcessing(true);
     try {
@@ -147,11 +188,16 @@ export default function POSScreen() {
       DB.saveOrder(
         {
           id, order_number: id,
+          customer_id: selectedCustomer?.id || '',
           customer_name: customerName.trim() || 'ลูกค้าทั่วไป',
-          customer_phone: '', subtotal, discount: discountNum, total,
+          customer_phone: selectedCustomer?.phone || '',
+          subtotal, discount: discountNum, total,
           payment_method: payMethod,
           payment_status: payMethod === 'credit' ? 'pending' : 'paid',
-          status: 'confirmed', notes: notes.trim(),
+          status: 'delivered',
+          order_type: 'walk_in',
+          pack_status: 'packed',
+          notes: notes.trim(),
           created_at: now, updated_at: now,
         },
         cart.map((c, i) => ({
@@ -164,11 +210,15 @@ export default function POSScreen() {
           quantity_kg: c.quantity_kg,
           unit_price: c.unit_price,
           total_price: c.quantity_kg * c.unit_price,
+          requested_kg: c.quantity_kg,
+          actual_kg: c.quantity_kg,
+          actual_weight_kg: c.quantity_kg,
         }))
       );
       setShowPayModal(false);
       clearCart();
-      setCustomerName(''); setNotes(''); setCashReceived(''); setDiscount('0');
+      clearCustomer();
+      setNotes(''); setCashReceived(''); setDiscount('0');
       const msg = payMethod === 'cash'
         ? `${t('payment_success','th')}\n${t('change','th')}: ฿${change.toFixed(2)}`
         : t('payment_success','th');
@@ -182,79 +232,137 @@ export default function POSScreen() {
 
   const filtered = products.filter(p => {
     const q = search.toLowerCase();
-    return (
-      (p.name_th || '').toLowerCase().includes(q) ||
-      (p.name_mm || '').toLowerCase().includes(q) ||
-      (p.name_en || '').toLowerCase().includes(q) ||
-      (p.name_cn || '').toLowerCase().includes(q)
-    );
+    return (p.name_th||'').toLowerCase().includes(q) ||
+      (p.name_mm||'').toLowerCase().includes(q) ||
+      (p.name_en||'').toLowerCase().includes(q) ||
+      (p.name_cn||'').toLowerCase().includes(q);
   });
 
   return (
     <SafeAreaView style={s.safe}>
-      <StatusBar backgroundColor="#c0392b" barStyle="light-content" />
+      <StatusBar backgroundColor={CHILLI.dark} barStyle="light-content" />
 
       {/* ── Navbar ── */}
       <View style={s.navbar}>
-        <Text style={s.navTitle}>🌶️ {settings?.shop_name || 'POS'}</Text>
-        {/* Language switcher */}
+        <View style={s.navLogoWrap}>
+          <Text style={s.navLogoEmoji}>🌶️</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.navTitle}>{settings?.shop_name || 'J.Rung Chilli'}</Text>
+          <Text style={s.navSub}>🛒 POS — ขายหน้าร้าน</Text>
+        </View>
         <View style={s.langRow}>
           {LANGS.map(l => (
-            <TouchableOpacity
-              key={l.code}
+            <TouchableOpacity key={l.code}
               style={[s.langBtn, lang === l.code && s.langBtnOn]}
-              onPress={() => setLang(l.code)}
-            >
+              onPress={() => setLang(l.code)}>
               <Text style={s.langFlag}>{l.flag}</Text>
             </TouchableOpacity>
           ))}
         </View>
         <TouchableOpacity style={s.homeBtn} onPress={() =>
-          Alert.alert(
-            'ออกจากระบบ' + (lang !== 'th' ? ` / ${t('home', lang)}` : ''),
-            'ต้องการออก?' + (lang !== 'th' ? ` / ${t('confirm', lang)}?` : ''),
-            [
-              { text: t('cancel','th') + (lang !== 'th' ? ` / ${t('cancel',lang)}` : ''), style: 'cancel' },
-              { text: t('confirm','th'), onPress: logout },
-            ]
-          )
-        }>
+          Alert.alert('ออกจากระบบ', 'ต้องการออก?', [
+            { text: t('cancel','th'), style: 'cancel' },
+            { text: t('confirm','th'), onPress: logout },
+          ])}>
           <Text style={s.homeBtnTxt}>🏠</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={s.body} showsVerticalScrollIndicator={false}>
+      <ScrollView style={s.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-        {/* ── น้ำหนัก / Weight ── */}
+        {/* ── ลูกค้า (auto-wholesale) ── */}
         <View style={s.card}>
-          <Text style={s.cardTitle}>⚖️ {t('weight_kg','th')}{lang !== 'th' ? ` / ${t('weight_kg',lang)}` : ''}</Text>
+          <Text style={s.cardTitle}>👤 ลูกค้า{lang !== 'th' ? ` / ${t('customers',lang)}` : ''}</Text>
+
+          {/* Selected customer badge */}
+          {selectedCustomer ? (
+            <View style={s.customerSelectedBadge}>
+              <View style={s.customerSelectedLeft}>
+                <Text style={s.customerSelectedIcon}>
+                  {selectedCustomer.customer_type === 'wholesale' ? '📦' : '🛒'}
+                </Text>
+                <View>
+                  <Text style={s.customerSelectedName}>{selectedCustomer.shop_name}</Text>
+                  <Text style={s.customerSelectedType}>
+                    {selectedCustomer.customer_type === 'wholesale'
+                      ? `✅ ราคาส่ง — ฿${unitPrice > 0 ? unitPrice : '—'}/กก.`
+                      : '🛒 ราคาปลีก'}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity style={s.customerClearBtn} onPress={clearCustomer}>
+                <Text style={s.customerClearTxt}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View>
+              <TextInput
+                style={s.customerInput}
+                value={customerName}
+                onChangeText={onCustomerSearch}
+                placeholder={`🔍 พิมชื่อร้านเพื่อค้นหา... (ราคาส่งอัตโนมัติ)`}
+                placeholderTextColor={CHILLI.textSecondary}
+              />
+              {/* General customer button */}
+              {customerName.length === 0 && (
+                <TouchableOpacity
+                  style={s.generalCustomerBtn}
+                  onPress={() => { setCustomerName('ลูกค้าทั่วไป'); setPriceType('retail'); }}>
+                  <Text style={s.generalCustomerBtnTxt}>🛒 ลูกค้าทั่วไป (ราคาปลีก)</Text>
+                </TouchableOpacity>
+              )}
+              {/* Autocomplete dropdown */}
+              {customerSuggestions.length > 0 && (
+                <View style={s.suggestBox}>
+                  {customerSuggestions.map(c => (
+                    <TouchableOpacity key={c.id} style={s.suggestItem} onPress={() => selectCustomer(c)}>
+                      <View style={s.suggestLeft}>
+                        <Text style={s.suggestIcon}>{c.customer_type === 'wholesale' ? '📦' : '🛒'}</Text>
+                        <View>
+                          <Text style={s.suggestName}>{c.shop_name}</Text>
+                          <Text style={s.suggestType}>
+                            {c.customer_type === 'wholesale' ? 'ราคาส่ง ← เลือกเพื่อใช้' : 'ราคาปลีก'}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={[s.suggestBadge, { color: c.customer_type === 'wholesale' ? CHILLI.orange : CHILLI.red }]}>
+                        {c.customer_type === 'wholesale' ? '📦ส่ง' : '🛒ปลีก'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* ── น้ำหนัก ── */}
+        <View style={s.card}>
+          <Text style={s.cardTitle}>⚖️ {lbl('weight_kg')}</Text>
           <TextInput
             style={s.weightInput}
             value={manualWeight}
             onChangeText={setManualWeight}
             keyboardType="decimal-pad"
             placeholder="0.000"
-            placeholderTextColor="#bbb"
+            placeholderTextColor={CHILLI.textLight}
           />
-          <Text style={s.hint}>
-            {t('enter_weight','th')}{lang !== 'th' ? ` / ${t('enter_weight',lang)}` : ''}
-          </Text>
+          <Text style={s.hint}>{lbl('enter_weight')}</Text>
         </View>
 
-        {/* ── เลือกสินค้า / Select Product ── */}
+        {/* ── เลือกสินค้า ── */}
         <View style={s.card}>
-          <Text style={s.cardTitle}>
-            🌶️ {t('select_product','th')}{lang !== 'th' ? ` / ${t('select_product',lang)}` : ''}
-          </Text>
+          <Text style={s.cardTitle}>🌶️ {lbl('select_product')}</Text>
           <TextInput
             style={s.searchInput}
             value={search}
             onChangeText={setSearch}
-            placeholder={`🔍 ${t('search','th')}${lang !== 'th' ? ` / ${t('search',lang)}` : ''}...`}
-            placeholderTextColor="#9ca3af"
+            placeholder={`🔍 ${lbl('search')}...`}
+            placeholderTextColor={CHILLI.textSecondary}
           />
           {loading ? (
-            <ActivityIndicator color="#c0392b" size="large" style={{ marginTop: 16 }} />
+            <ActivityIndicator color={CHILLI.red} size="large" style={{ marginTop: 16 }} />
           ) : (
             <>
               <View style={s.productGrid}>
@@ -263,11 +371,12 @@ export default function POSScreen() {
                     key={item.id}
                     style={[s.productBtn, selectedProduct?.id === item.id && s.productBtnActive]}
                     onPress={() => setSelectedProduct(item)}
-                    activeOpacity={0.8}
-                  >
-                    {/* ชื่อสินค้า: TH หลัก + ภาษาที่เลือกรอง */}
+                    activeOpacity={0.8}>
                     <ProductName product={item} lang={lang} />
-                    <Text style={s.productPrice}>฿{item.price_retail}/กก.</Text>
+                    <Text style={[s.productPrice,
+                      priceType === 'wholesale' && { color: CHILLI.orange }]}>
+                      ฿{priceType === 'wholesale' ? item.price_wholesale : item.price_retail}/กก.
+                    </Text>
                     <Text style={[s.productStock, item.stock_kg < 5 && s.lowStock]}>
                       {item.stock_kg < 5 ? '⚠️' : '✅'} {item.stock_kg} kg
                     </Text>
@@ -275,9 +384,7 @@ export default function POSScreen() {
                 ))}
               </View>
               {filtered.length === 0 && (
-                <Text style={s.emptyText}>
-                  {t('no_products','th')}{lang !== 'th' ? ` / ${t('no_products',lang)}` : ''}
-                </Text>
+                <Text style={s.emptyText}>{lbl('no_products')}</Text>
               )}
             </>
           )}
@@ -287,59 +394,54 @@ export default function POSScreen() {
         {selectedProduct && (
           <View style={s.card}>
             <Text style={s.cardTitle}>💰 {t('price_retail','th')} / {t('price_wholesale','th')}</Text>
+
+            {/* Price type toggle */}
             <View style={s.priceTypeRow}>
               <TouchableOpacity
-                style={[s.priceTypeBtn, priceType === 'retail' && s.priceTypeBtnActive]}
-                onPress={() => setPriceType('retail')}
-              >
-                <Text style={[s.priceTypeTxt, priceType === 'retail' && s.priceTypeTxtActive]}>
+                style={[s.priceTypeBtn, priceType === 'retail' && s.priceTypeBtnActiveRetail]}
+                onPress={() => setPriceType('retail')}>
+                <Text style={[s.priceTypeTxt, priceType === 'retail' && { color: CHILLI.red }]}>
                   🛒 {t('price_retail','th')}
                 </Text>
-                {lang !== 'th' && (
-                  <Text style={[s.priceTypeSub, priceType === 'retail' && s.priceTypeTxtActive]}>
-                    {t('price_retail', lang)}
-                  </Text>
-                )}
-                <Text style={[s.priceVal, priceType === 'retail' && s.priceValActive]}>
+                {lang !== 'th' && <Text style={s.priceTypeSub}>{t('price_retail', lang)}</Text>}
+                <Text style={[s.priceVal, priceType === 'retail' && { color: CHILLI.red }]}>
                   ฿{selectedProduct.price_retail}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[s.priceTypeBtn, priceType === 'wholesale' && s.priceTypeBtnActive]}
-                onPress={() => setPriceType('wholesale')}
-              >
-                <Text style={[s.priceTypeTxt, priceType === 'wholesale' && s.priceTypeTxtActive]}>
+                style={[s.priceTypeBtn, priceType === 'wholesale' && s.priceTypeBtnActiveWhole]}
+                onPress={() => setPriceType('wholesale')}>
+                <Text style={[s.priceTypeTxt, priceType === 'wholesale' && { color: CHILLI.orange }]}>
                   📦 {t('price_wholesale','th')}
                 </Text>
-                {lang !== 'th' && (
-                  <Text style={[s.priceTypeSub, priceType === 'wholesale' && s.priceTypeTxtActive]}>
-                    {t('price_wholesale', lang)}
-                  </Text>
-                )}
-                <Text style={[s.priceVal, priceType === 'wholesale' && s.priceValActive]}>
+                {lang !== 'th' && <Text style={s.priceTypeSub}>{t('price_wholesale', lang)}</Text>}
+                <Text style={[s.priceVal, priceType === 'wholesale' && { color: CHILLI.orange }]}>
                   ฿{selectedProduct.price_wholesale}
                 </Text>
+                {selectedCustomer?.customer_type === 'wholesale' && (
+                  <View style={s.autoBadge}>
+                    <Text style={s.autoBadgeTxt}>⚡ Auto</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
 
-            {/* สูตรคำนวณ */}
-            <View style={s.formulaBox}>
+            {/* Formula */}
+            <View style={[s.formulaBox, priceType === 'wholesale' && { borderLeftColor: CHILLI.orange }]}>
               <Text style={s.formulaNameTh}>{selectedProduct.name_th}</Text>
-              {lang !== 'th' && (
-                <Text style={s.formulaNameSub}>{getProductName(selectedProduct, lang)}</Text>
-              )}
-              <Text style={s.formulaTxt}>
-                {activeWeight.toFixed(3)} kg × ฿{unitPrice}
+              {lang !== 'th' && <Text style={s.formulaNameSub}>{getProductName(selectedProduct, lang)}</Text>}
+              <Text style={s.formulaTxt}>{activeWeight.toFixed(3)} kg × ฿{unitPrice}</Text>
+              <Text style={[s.formulaTotal, priceType === 'wholesale' && { color: CHILLI.orange }]}>
+                ฿{lineTotal.toFixed(2)}
               </Text>
-              <Text style={s.formulaTotal}>฿{lineTotal.toFixed(2)}</Text>
             </View>
 
             <View style={s.actionRow}>
-              <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#c0392b' }]} onPress={addToCart}>
+              <TouchableOpacity style={[s.actionBtn, { backgroundColor: CHILLI.red }]} onPress={addToCart}>
                 <Text style={s.actionBtnTxt}>➕ {t('add_to_bill','th')}</Text>
                 {lang !== 'th' && <Text style={s.actionBtnSub}>{t('add_to_bill', lang)}</Text>}
               </TouchableOpacity>
-              <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#8e44ad' }]} onPress={handlePrintSticker}>
+              <TouchableOpacity style={[s.actionBtn, { backgroundColor: CHILLI.purple }]} onPress={handlePrintSticker}>
                 <Text style={s.actionBtnTxt}>🏷️ {t('print_sticker','th')}</Text>
                 {lang !== 'th' && <Text style={s.actionBtnSub}>{t('print_sticker', lang)}</Text>}
               </TouchableOpacity>
@@ -347,22 +449,19 @@ export default function POSScreen() {
           </View>
         )}
 
-        {/* ── บิล / Bill ── */}
+        {/* ── บิล ── */}
         <View style={s.card}>
           <View style={s.billHeader}>
             <View>
-              <Text style={s.cardTitle}>🧾 {t('bill_items','th')}{lang !== 'th' ? ` / ${t('bill_items',lang)}` : ''}</Text>
-              <Text style={s.cardSub}>{cart.length} รายการ / items</Text>
+              <Text style={s.cardTitle}>🧾 {lbl('bill_items')}</Text>
+              <Text style={s.cardSub}>{cart.length} รายการ</Text>
             </View>
             {cart.length > 0 && (
-              <TouchableOpacity onPress={() => Alert.alert(
-                t('clear_bill','th'),
-                'ต้องการล้างบิลทั้งหมด?',
-                [
+              <TouchableOpacity onPress={() =>
+                Alert.alert(lbl('clear_bill'), 'ต้องการล้างบิลทั้งหมด?', [
                   { text: t('cancel','th'), style: 'cancel' },
                   { text: t('delete','th'), style: 'destructive', onPress: clearCart },
-                ]
-              )}>
+                ])}>
                 <Text style={s.clearBillTxt}>🗑️ {t('clear_bill','th')}</Text>
               </TouchableOpacity>
             )}
@@ -371,13 +470,14 @@ export default function POSScreen() {
           {cart.length === 0 ? (
             <View style={s.emptyCartBox}>
               <Text style={s.emptyCartIcon}>🛒</Text>
-              <Text style={s.emptyCart}>{t('no_items','th')}</Text>
-              {lang !== 'th' && <Text style={s.emptyCartSub}>{t('no_items', lang)}</Text>}
+              <Text style={s.emptyCart}>{lbl('no_items')}</Text>
             </View>
           ) : (
             <>
               {cart.map(item => (
                 <View key={`${item.product.id}_${item.price_type}`} style={s.cartItem}>
+                  <View style={[s.cartPriceBar,
+                    { backgroundColor: item.price_type === 'wholesale' ? CHILLI.orange : CHILLI.red }]} />
                   <View style={s.cartInfo}>
                     <Text style={s.cartNameTh} numberOfLines={1}>{item.product.name_th}</Text>
                     {lang !== 'th' && (
@@ -388,13 +488,16 @@ export default function POSScreen() {
                     <Text style={s.cartDetail}>
                       {item.quantity_kg.toFixed(3)} kg × ฿{item.unit_price} = ฿{(item.quantity_kg * item.unit_price).toFixed(2)}
                     </Text>
-                    <Text style={s.cartType}>
-                      {item.price_type === 'retail'
-                        ? `🛒 ${t('price_retail','th')}`
-                        : `📦 ${t('price_wholesale','th')}`}
-                    </Text>
+                    <View style={[s.cartTypeBadge,
+                      { backgroundColor: item.price_type === 'wholesale' ? '#fff3e0' : '#fef5f5' }]}>
+                      <Text style={[s.cartTypeTxt,
+                        { color: item.price_type === 'wholesale' ? CHILLI.orange : CHILLI.red }]}>
+                        {item.price_type === 'retail' ? '🛒 ปลีก' : '📦 ส่ง'}
+                      </Text>
+                    </View>
                   </View>
-                  <TouchableOpacity style={s.cartDel} onPress={() => removeFromCart(item.product.id, item.price_type)}>
+                  <TouchableOpacity style={s.cartDel}
+                    onPress={() => removeFromCart(item.product.id, item.price_type)}>
                     <Text style={s.cartDelTxt}>✕</Text>
                   </TouchableOpacity>
                 </View>
@@ -402,34 +505,32 @@ export default function POSScreen() {
 
               {/* ส่วนลด */}
               <View style={s.discountRow}>
-                <Text style={s.discountLbl}>
-                  💰 {t('discount','th')}{lang !== 'th' ? ` / ${t('discount',lang)}` : ''} ฿
-                </Text>
+                <Text style={s.discountLbl}>💰 {lbl('discount')} ฿</Text>
                 <TextInput
                   style={s.discountInput}
                   value={discount}
                   onChangeText={setDiscount}
                   keyboardType="decimal-pad"
                   placeholder="0"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor={CHILLI.textLight}
                 />
               </View>
 
               {/* สรุป */}
               <View style={s.totalBox}>
                 <View style={s.totalRow}>
-                  <Text style={s.totalLbl}>{t('total','th')}{lang !== 'th' ? ` / ${t('total',lang)}` : ''}</Text>
+                  <Text style={s.totalLbl}>{lbl('total')}</Text>
                   <Text style={s.totalVal}>฿{subtotal.toFixed(2)}</Text>
                 </View>
                 {discountNum > 0 && (
                   <View style={s.totalRow}>
                     <Text style={s.totalLbl}>{t('discount','th')}</Text>
-                    <Text style={[s.totalVal, { color: '#27ae60' }]}>-฿{discountNum.toFixed(2)}</Text>
+                    <Text style={[s.totalVal, { color: CHILLI.green }]}>-฿{discountNum.toFixed(2)}</Text>
                   </View>
                 )}
                 <View style={[s.totalRow, s.totalRowBig]}>
                   <Text style={s.totalLblBig}>
-                    {t('net_total','th')}{lang !== 'th' ? `\n${t('net_total',lang)}` : ''}
+                    {lbl('net_total')}
                   </Text>
                   <Text style={s.totalValBig}>฿{total.toFixed(2)}</Text>
                 </View>
@@ -437,15 +538,15 @@ export default function POSScreen() {
             </>
           )}
         </View>
-        <View style={{ height: 16 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
 
-      {/* ── Footer ปุ่มชำระเงิน ── */}
+      {/* ── Footer ── */}
       {cart.length > 0 && (
         <View style={s.footer}>
           <TouchableOpacity style={s.payBtn} onPress={() => setShowPayModal(true)}>
             <Text style={s.payBtnTxt}>
-              💳 {t('checkout','th')}{lang !== 'th' ? ` / ${t('checkout',lang)}` : ''}  ฿{total.toFixed(2)}
+              💳 {lbl('checkout')}  ฿{total.toFixed(2)}
             </Text>
           </TouchableOpacity>
         </View>
@@ -456,38 +557,27 @@ export default function POSScreen() {
         <View style={m.overlay}>
           <View style={m.box}>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={m.title}>
-                💳 {t('checkout','th')}{lang !== 'th' ? ` / ${t('checkout',lang)}` : ''}
-              </Text>
-
-              <Text style={m.lbl}>
-                👤 ชื่อลูกค้า{lang !== 'th' ? ` / ${t('customers',lang)}` : ''}
-              </Text>
-              <TextInput
-                style={m.input}
-                value={customerName}
-                onChangeText={setCustomerName}
-                placeholder="ลูกค้าทั่วไป / Walk-in"
-                placeholderTextColor="#9ca3af"
-              />
+              {/* Header */}
+              <View style={m.modalHeader}>
+                <Text style={m.title}>💳 {lbl('checkout')}</Text>
+                <Text style={m.titleSub}>
+                  {customerName || 'ลูกค้าทั่วไป'}{selectedCustomer?.customer_type === 'wholesale' ? ' · ราคาส่ง' : ''}
+                </Text>
+              </View>
 
               <View style={m.totalRow}>
-                <Text style={m.totalLbl}>
-                  {t('net_total','th')}{lang !== 'th' ? ` / ${t('net_total',lang)}` : ''}
-                </Text>
+                <Text style={m.totalLbl}>{lbl('net_total')}</Text>
                 <Text style={m.totalVal}>฿{total.toFixed(2)}</Text>
               </View>
 
-              <Text style={m.lbl}>
-                💳 {t('confirm_pay','th')}{lang !== 'th' ? ` / ${t('confirm_pay',lang)}` : ''}
-              </Text>
+              {/* Payment method */}
+              <Text style={m.lbl}>💳 {lbl('confirm_pay')}</Text>
               <View style={m.payMethodRow}>
                 {(['cash','transfer','credit'] as PayMethod[]).map(pm => (
                   <TouchableOpacity
                     key={pm}
                     style={[m.payMethodBtn, payMethod === pm && m.payMethodBtnActive]}
-                    onPress={() => setPayMethod(pm)}
-                  >
+                    onPress={() => setPayMethod(pm)}>
                     <Text style={m.payMethodIcon}>
                       {pm === 'cash' ? '💵' : pm === 'transfer' ? '🏦' : '💳'}
                     </Text>
@@ -505,16 +595,14 @@ export default function POSScreen() {
 
               {payMethod === 'cash' && (
                 <>
-                  <Text style={m.lbl}>
-                    💵 {t('received','th')}{lang !== 'th' ? ` / ${t('received',lang)}` : ''} ฿
-                  </Text>
+                  <Text style={m.lbl}>💵 {lbl('received')} ฿</Text>
                   <TextInput
                     style={m.cashInput}
                     value={cashReceived}
                     onChangeText={setCashReceived}
                     keyboardType="decimal-pad"
                     placeholder="0.00"
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={CHILLI.textSecondary}
                   />
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <View style={m.quickRow}>
@@ -523,15 +611,14 @@ export default function POSScreen() {
                           <Text style={m.quickTxt}>฿{v}</Text>
                         </TouchableOpacity>
                       ))}
-                      <TouchableOpacity style={[m.quickBtn, { backgroundColor: '#27ae60' }]} onPress={() => setCashReceived(total.toFixed(2))}>
+                      <TouchableOpacity style={[m.quickBtn, { backgroundColor: CHILLI.green }]}
+                        onPress={() => setCashReceived(total.toFixed(2))}>
                         <Text style={[m.quickTxt, { color: '#fff' }]}>พอดี / Exact</Text>
                       </TouchableOpacity>
                     </View>
                   </ScrollView>
                   <View style={[m.changeBox, change < 0 && { backgroundColor: '#fef2f2' }]}>
-                    <Text style={m.changeLbl}>
-                      🔄 {t('change','th')}{lang !== 'th' ? ` / ${t('change',lang)}` : ''}
-                    </Text>
+                    <Text style={m.changeLbl}>🔄 {lbl('change')}</Text>
                     <Text style={[m.changeVal, change < 0 && { color: '#ef4444' }]}>
                       ฿{change.toFixed(2)}
                     </Text>
@@ -551,37 +638,36 @@ export default function POSScreen() {
                 <View style={m.infoBox}>
                   <Text style={m.infoTxt}>💳 {t('credit','th')} ฿{total.toFixed(2)}</Text>
                   {lang !== 'th' && <Text style={m.infoSub}>{t('credit', lang)}</Text>}
+                  {selectedCustomer && selectedCustomer.credit_limit > 0 && (
+                    <Text style={m.infoSub}>
+                      วงเงิน: ฿{selectedCustomer.credit_limit.toLocaleString()} | ใช้: ฿{(selectedCustomer.credit_used||0).toLocaleString()}
+                    </Text>
+                  )}
                 </View>
               )}
 
-              <Text style={m.lbl}>
-                📝 {t('notes','th')}{lang !== 'th' ? ` / ${t('notes',lang)}` : ''}
-              </Text>
+              <Text style={m.lbl}>📝 {lbl('notes')}</Text>
               <TextInput
                 style={m.input}
                 value={notes}
                 onChangeText={setNotes}
-                placeholder="(ไม่บังคับ / Optional)"
-                placeholderTextColor="#9ca3af"
+                placeholder="(ไม่บังคับ)"
+                placeholderTextColor={CHILLI.textSecondary}
               />
 
               <View style={m.btnRow}>
                 <TouchableOpacity style={[m.btn, m.btnGrey]} onPress={() => setShowPayModal(false)}>
-                  <Text style={m.btnGreyTxt}>{t('cancel','th')}</Text>
-                  {lang !== 'th' && <Text style={m.btnGreySub}>{t('cancel', lang)}</Text>}
+                  <Text style={m.btnGreyTxt}>{lbl('cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[m.btn, m.btnGreen, processing && { opacity: 0.6 }]}
                   onPress={handleCheckout}
-                  disabled={processing}
-                >
+                  disabled={processing}>
                   {processing
                     ? <ActivityIndicator color="#fff" />
                     : <>
-                        <Text style={m.btnGreenTxt}>✅ {t('confirm_pay','th')}</Text>
-                        {lang !== 'th' && <Text style={m.btnGreenSub}>{t('confirm_pay', lang)}</Text>}
-                      </>
-                  }
+                        <Text style={m.btnGreenTxt}>✅ {lbl('confirm_pay')}</Text>
+                      </>}
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -593,23 +679,24 @@ export default function POSScreen() {
       <Modal visible={showStickerModal} transparent animationType="slide">
         <View style={m.overlay}>
           <View style={m.box}>
-            <Text style={m.title}>
-              🏷️ {t('print_sticker','th')}{lang !== 'th' ? ` / ${t('print_sticker',lang)}` : ''}
-            </Text>
+            <Text style={m.title}>🏷️ {lbl('print_sticker')}</Text>
             {stickerProduct && (
               <View style={stk.preview}>
-                <Text style={stk.shopName}>{stickerProduct.shopName}</Text>
+                <View style={stk.previewHeader}>
+                  <Text style={stk.shopName}>{stickerProduct.shopName}</Text>
+                  <Text style={stk.date}>{stickerProduct.date}</Text>
+                </View>
                 <View style={stk.divider} />
                 <Text style={stk.nameTh}>{stickerProduct.product.name_th}</Text>
                 {lang !== 'th' && (
                   <Text style={stk.nameSub}>{getProductName(stickerProduct.product, lang)}</Text>
                 )}
                 <View style={stk.divider} />
-                <Text style={stk.detail}>⚖️ {stickerProduct.weight.toFixed(3)} kg</Text>
-                <Text style={stk.detail}>💰 ฿{stickerProduct.unitPrice}/kg</Text>
-                <View style={stk.divider} />
+                <View style={stk.detailRow}>
+                  <Text style={stk.detail}>⚖️ {stickerProduct.weight.toFixed(3)} kg</Text>
+                  <Text style={stk.detail}>💰 ฿{stickerProduct.unitPrice}/kg</Text>
+                </View>
                 <Text style={stk.total}>฿{stickerProduct.total.toFixed(2)}</Text>
-                <Text style={stk.date}>{stickerProduct.date}</Text>
               </View>
             )}
             <View style={m.btnRow}>
@@ -617,11 +704,9 @@ export default function POSScreen() {
                 <Text style={m.btnGreyTxt}>{t('cancel','th')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[m.btn, { backgroundColor: '#8e44ad', flex: 2 }]}
-                onPress={() => { setShowStickerModal(false); Alert.alert('🖨️', t('print_sticker','th') + ' — OK'); }}
-              >
-                <Text style={m.btnGreenTxt}>🖨️ {t('print_sticker','th')}</Text>
-                {lang !== 'th' && <Text style={m.btnGreenSub}>{t('print_sticker', lang)}</Text>}
+                style={[m.btn, { backgroundColor: CHILLI.purple, flex: 2 }]}
+                onPress={() => { setShowStickerModal(false); Alert.alert('🖨️', t('print_sticker','th') + ' — OK'); }}>
+                <Text style={m.btnGreenTxt}>🖨️ {lbl('print_sticker')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -632,119 +717,278 @@ export default function POSScreen() {
   );
 }
 
+// ─── Styles ──────────────────────────────────────────────────
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f0f0f0' },
-  navbar: { backgroundColor: '#c0392b', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 8, elevation: 4, gap: 6 },
-  navTitle: { fontSize: 13, fontWeight: 'bold', color: '#fff', flex: 1 },
-  langRow: { flexDirection: 'row', gap: 4 },
-  langBtn: { padding: 5, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.15)' },
-  langBtnOn: { backgroundColor: '#fff' },
-  langFlag: { fontSize: 18 },
-  homeBtn: { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 8, padding: 8 },
-  homeBtnTxt: { fontSize: 18 },
+  safe: { flex: 1, backgroundColor: CHILLI.cream },
+
+  // Navbar
+  navbar: {
+    backgroundColor: CHILLI.dark,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 10, paddingVertical: 8,
+    ...shadow(3), gap: 6,
+  },
+  navLogoWrap: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: CHILLI.red,
+    alignItems: 'center', justifyContent: 'center',
+    marginRight: 4,
+  },
+  navLogoEmoji: { fontSize: 18 },
+  navTitle: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  navSub: { fontSize: 10, color: 'rgba(255,255,255,0.65)', marginTop: 1 },
+  langRow: { flexDirection: 'row', gap: 3 },
+  langBtn: { padding: 4, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.12)' },
+  langBtnOn: { backgroundColor: CHILLI.orangeLight },
+  langFlag: { fontSize: 16 },
+  homeBtn: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: 8 },
+  homeBtnTxt: { fontSize: 16 },
+
   body: { flex: 1 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 14, margin: 10, marginBottom: 0, elevation: 2 },
-  cardTitle: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 8 },
-  cardSub: { fontSize: 11, color: '#aaa', marginTop: 1 },
-  hint: { fontSize: 11, color: '#aaa', textAlign: 'center', marginTop: 6 },
-  weightInput: { borderWidth: 2, borderColor: '#c0392b', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 30, fontWeight: 'bold', color: '#c0392b', textAlign: 'center', backgroundColor: '#fef5f5' },
-  searchInput: { borderWidth: 1.5, borderColor: '#e0e0e0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, backgroundColor: '#fafafa', marginBottom: 10 },
+
+  // Cards
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 14, padding: 14,
+    marginHorizontal: 10, marginTop: 10,
+    ...shadow(2),
+  },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: CHILLI.textPrimary, marginBottom: 10 },
+  cardSub: { fontSize: 11, color: CHILLI.textSecondary, marginTop: 1 },
+  hint: { fontSize: 11, color: CHILLI.textSecondary, textAlign: 'center', marginTop: 6 },
+
+  // Customer search
+  customerInput: {
+    borderWidth: 1.5, borderColor: CHILLI.borderLight,
+    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11,
+    fontSize: 14, color: CHILLI.textPrimary,
+    backgroundColor: '#fafafa',
+  },
+  generalCustomerBtn: {
+    marginTop: 8, paddingVertical: 10, paddingHorizontal: 14,
+    backgroundColor: CHILLI.grayLight, borderRadius: 8,
+    alignItems: 'center',
+  },
+  generalCustomerBtnTxt: { fontSize: 13, color: CHILLI.textSecondary, fontWeight: '600' },
+  suggestBox: {
+    borderWidth: 1.5, borderColor: CHILLI.borderLight,
+    borderRadius: 10, marginTop: 4, overflow: 'hidden',
+    backgroundColor: '#fff', ...shadow(2),
+  },
+  suggestItem: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 14, paddingVertical: 11,
+    borderBottomWidth: 1, borderColor: '#f5f5f5',
+  },
+  suggestLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  suggestIcon: { fontSize: 22 },
+  suggestName: { fontSize: 14, fontWeight: '700', color: CHILLI.textPrimary },
+  suggestType: { fontSize: 11, color: CHILLI.textSecondary, marginTop: 1 },
+  suggestBadge: { fontSize: 12, fontWeight: '700' },
+  customerSelectedBadge: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#fff8f0',
+    borderRadius: 10, padding: 12,
+    borderWidth: 1.5, borderColor: CHILLI.orange,
+  },
+  customerSelectedLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 10 },
+  customerSelectedIcon: { fontSize: 28 },
+  customerSelectedName: { fontSize: 15, fontWeight: '700', color: CHILLI.textPrimary },
+  customerSelectedType: { fontSize: 12, color: CHILLI.orange, marginTop: 2 },
+  customerClearBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: CHILLI.grayLight,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  customerClearTxt: { fontSize: 14, color: CHILLI.textSecondary, fontWeight: '700' },
+
+  // Weight input
+  weightInput: {
+    borderWidth: 2.5, borderColor: CHILLI.red, borderRadius: 12,
+    paddingHorizontal: 16, paddingVertical: 14,
+    fontSize: 32, fontWeight: '800', color: CHILLI.red,
+    textAlign: 'center', backgroundColor: '#fff8f5',
+  },
+
+  // Search
+  searchInput: {
+    borderWidth: 1.5, borderColor: CHILLI.borderLight,
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10,
+    fontSize: 14, backgroundColor: '#fafafa', marginBottom: 10,
+    color: CHILLI.textPrimary,
+  },
+
+  // Product grid
   productGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  productBtn: { width: '47%', backgroundColor: '#f9f9f9', borderRadius: 10, padding: 12, borderWidth: 1.5, borderColor: '#e0e0e0' },
-  productBtnActive: { borderColor: '#c0392b', backgroundColor: '#fef5f5' },
-  productPrice: { fontSize: 12, color: '#c0392b', fontWeight: '600', marginTop: 4 },
-  productStock: { fontSize: 11, color: '#888', marginTop: 2 },
-  lowStock: { color: '#e67e22' },
-  emptyText: { fontSize: 14, color: '#aaa', padding: 16, textAlign: 'center' },
-  priceTypeRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-  priceTypeBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 8, borderWidth: 1.5, borderColor: '#ddd', backgroundColor: '#f9f9f9' },
-  priceTypeBtnActive: { borderColor: '#c0392b', backgroundColor: '#fef5f5' },
-  priceTypeTxt: { fontSize: 12, fontWeight: '700', color: '#555', textAlign: 'center' },
-  priceTypeSub: { fontSize: 11, color: '#888', textAlign: 'center', marginTop: 1 },
-  priceTypeTxtActive: { color: '#c0392b' },
-  priceVal: { fontSize: 15, fontWeight: 'bold', color: '#333', marginTop: 4 },
-  priceValActive: { color: '#c0392b' },
-  formulaBox: { backgroundColor: '#f9f9f9', borderRadius: 8, padding: 12, marginBottom: 10 },
-  formulaNameTh: { fontSize: 15, fontWeight: 'bold', color: '#333' },
-  formulaNameSub: { fontSize: 12, color: '#888', marginBottom: 4 },
-  formulaTxt: { fontSize: 13, color: '#555', marginTop: 4, marginBottom: 4 },
-  formulaTotal: { fontSize: 26, fontWeight: 'bold', color: '#c0392b' },
+  productBtn: {
+    width: '47%', backgroundColor: '#fafafa', borderRadius: 10,
+    padding: 12, borderWidth: 1.5, borderColor: '#e8e8e8',
+  },
+  productBtnActive: { borderColor: CHILLI.red, backgroundColor: '#fff5f2' },
+  productPrice: { fontSize: 12, color: CHILLI.red, fontWeight: '700', marginTop: 5 },
+  productStock: { fontSize: 10, color: CHILLI.textSecondary, marginTop: 2 },
+  lowStock: { color: CHILLI.orange },
+  emptyText: { fontSize: 14, color: CHILLI.textSecondary, padding: 16, textAlign: 'center' },
+
+  // Price type toggle
+  priceTypeRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  priceTypeBtn: {
+    flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 10,
+    borderWidth: 1.5, borderColor: '#ddd', backgroundColor: '#fafafa',
+  },
+  priceTypeBtnActiveRetail: { borderColor: CHILLI.red, backgroundColor: '#fff5f2' },
+  priceTypeBtnActiveWhole: { borderColor: CHILLI.orange, backgroundColor: '#fff8f0' },
+  priceTypeTxt: { fontSize: 12, fontWeight: '700', color: CHILLI.textSecondary, textAlign: 'center' },
+  priceTypeSub: { fontSize: 10, color: CHILLI.textLight, textAlign: 'center', marginTop: 1 },
+  priceVal: { fontSize: 15, fontWeight: '800', color: CHILLI.textPrimary, marginTop: 4 },
+  autoBadge: {
+    backgroundColor: CHILLI.orange, borderRadius: 6,
+    paddingHorizontal: 6, paddingVertical: 1, marginTop: 3,
+  },
+  autoBadgeTxt: { color: '#fff', fontSize: 9, fontWeight: '700' },
+
+  // Formula
+  formulaBox: {
+    backgroundColor: '#f9f9f9', borderRadius: 10,
+    padding: 12, marginBottom: 12,
+    borderLeftWidth: 4, borderLeftColor: CHILLI.red,
+  },
+  formulaNameTh: { fontSize: 15, fontWeight: '700', color: CHILLI.textPrimary },
+  formulaNameSub: { fontSize: 12, color: CHILLI.textSecondary, marginBottom: 4 },
+  formulaTxt: { fontSize: 13, color: CHILLI.textSecondary, marginTop: 4, marginBottom: 4 },
+  formulaTotal: { fontSize: 28, fontWeight: '800', color: CHILLI.red },
+
+  // Action buttons
   actionRow: { flexDirection: 'row', gap: 8 },
-  actionBtn: { flex: 1, borderRadius: 10, paddingVertical: 12, alignItems: 'center', elevation: 2 },
-  actionBtnTxt: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+  actionBtn: { flex: 1, borderRadius: 10, paddingVertical: 13, alignItems: 'center', ...shadow(2) },
+  actionBtnTxt: { color: '#fff', fontWeight: '700', fontSize: 13 },
   actionBtnSub: { color: 'rgba(255,255,255,0.8)', fontSize: 10, marginTop: 2 },
-  billHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  clearBillTxt: { fontSize: 13, color: '#c0392b', fontWeight: '600' },
+
+  // Bill
+  billHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  clearBillTxt: { fontSize: 13, color: CHILLI.red, fontWeight: '600' },
   emptyCartBox: { alignItems: 'center', paddingVertical: 24 },
-  emptyCartIcon: { fontSize: 40, marginBottom: 8 },
-  emptyCart: { fontSize: 14, color: '#aaa', fontWeight: '600' },
-  emptyCartSub: { fontSize: 12, color: '#bbb', marginTop: 4 },
-  cartItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderColor: '#f0f0f0' },
+  emptyCartIcon: { fontSize: 44, marginBottom: 8 },
+  emptyCart: { fontSize: 14, color: CHILLI.textSecondary, fontWeight: '600' },
+
+  cartItem: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 10, borderBottomWidth: 1, borderColor: '#f5f5f5',
+  },
+  cartPriceBar: { width: 4, height: '100%', borderRadius: 2, marginRight: 10, minHeight: 50 },
   cartInfo: { flex: 1 },
-  cartNameTh: { fontSize: 14, fontWeight: 'bold', color: '#333' },
-  cartNameSub: { fontSize: 11, color: '#888', marginTop: 1 },
-  cartDetail: { fontSize: 12, color: '#888', marginTop: 2 },
-  cartType: { fontSize: 11, color: '#aaa', marginTop: 1 },
-  cartDel: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#fef5f5', alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
-  cartDelTxt: { color: '#c0392b', fontSize: 15, fontWeight: 'bold' },
+  cartNameTh: { fontSize: 14, fontWeight: '700', color: CHILLI.textPrimary },
+  cartNameSub: { fontSize: 11, color: CHILLI.textSecondary, marginTop: 1 },
+  cartDetail: { fontSize: 12, color: CHILLI.textSecondary, marginTop: 2 },
+  cartTypeBadge: { alignSelf: 'flex-start', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, marginTop: 3 },
+  cartTypeTxt: { fontSize: 10, fontWeight: '700' },
+  cartDel: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: '#fef5f5', alignItems: 'center', justifyContent: 'center', marginLeft: 8,
+  },
+  cartDelTxt: { color: CHILLI.red, fontSize: 14, fontWeight: '700' },
+
   discountRow: { flexDirection: 'row', alignItems: 'center', paddingTop: 10, gap: 8 },
-  discountLbl: { fontSize: 12, color: '#555', fontWeight: '600', flex: 1 },
-  discountInput: { width: 100, borderWidth: 1.5, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 15, textAlign: 'right' },
-  totalBox: { marginTop: 10, backgroundColor: '#f9f9f9', borderRadius: 8, padding: 12 },
+  discountLbl: { fontSize: 12, color: CHILLI.textPrimary, fontWeight: '600', flex: 1 },
+  discountInput: {
+    width: 100, borderWidth: 1.5, borderColor: '#ddd', borderRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 8, fontSize: 15, textAlign: 'right',
+    color: CHILLI.textPrimary,
+  },
+
+  totalBox: { marginTop: 10, backgroundColor: CHILLI.cream, borderRadius: 10, padding: 12 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-  totalRowBig: { borderTopWidth: 1, borderColor: '#e0e0e0', marginTop: 6, paddingTop: 8 },
-  totalLbl: { fontSize: 13, color: '#555' },
-  totalVal: { fontSize: 13, color: '#333', fontWeight: '600' },
-  totalLblBig: { fontSize: 15, fontWeight: 'bold', color: '#333', lineHeight: 20 },
-  totalValBig: { fontSize: 22, fontWeight: 'bold', color: '#c0392b' },
-  footer: { backgroundColor: '#fff', padding: 12, elevation: 8, borderTopWidth: 1, borderColor: '#eee' },
-  payBtn: { backgroundColor: '#27ae60', borderRadius: 12, paddingVertical: 16, alignItems: 'center', elevation: 3 },
-  payBtnTxt: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  totalRowBig: { borderTopWidth: 1, borderColor: '#e0ddd8', marginTop: 6, paddingTop: 8 },
+  totalLbl: { fontSize: 13, color: CHILLI.textSecondary },
+  totalVal: { fontSize: 13, color: CHILLI.textPrimary, fontWeight: '600' },
+  totalLblBig: { fontSize: 15, fontWeight: '700', color: CHILLI.textPrimary },
+  totalValBig: { fontSize: 24, fontWeight: '800', color: CHILLI.red },
+
+  footer: {
+    backgroundColor: '#fff', padding: 12,
+    ...shadow(4), borderTopWidth: 1, borderColor: '#f0ece8',
+  },
+  payBtn: {
+    backgroundColor: CHILLI.green, borderRadius: 14,
+    paddingVertical: 16, alignItems: 'center', ...shadow(3),
+  },
+  payBtnTxt: { color: '#fff', fontWeight: '800', fontSize: 16 },
 });
 
 const m = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
-  box: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '92%' },
-  title: { fontSize: 17, fontWeight: 'bold', color: '#333', marginBottom: 14 },
-  lbl: { fontSize: 13, color: '#555', fontWeight: '600', marginBottom: 6, marginTop: 10 },
-  input: { borderWidth: 1.5, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14, color: '#222' },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderTopWidth: 1, borderColor: '#eee', marginTop: 6 },
-  totalLbl: { fontSize: 15, fontWeight: 'bold', color: '#333' },
-  totalVal: { fontSize: 22, fontWeight: 'bold', color: '#c0392b' },
-  payMethodRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
-  payMethodBtn: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, borderColor: '#ddd', backgroundColor: '#f9f9f9' },
-  payMethodBtnActive: { borderColor: '#27ae60', backgroundColor: '#f0faf0' },
-  payMethodIcon: { fontSize: 20 },
-  payMethodTxt: { fontSize: 12, color: '#555', marginTop: 2, fontWeight: '600' },
-  payMethodSub: { fontSize: 10, color: '#888', marginTop: 1 },
-  payMethodTxtActive: { color: '#27ae60' },
-  cashInput: { borderWidth: 2, borderColor: '#27ae60', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12, fontSize: 26, fontWeight: 'bold', color: '#27ae60', textAlign: 'right', backgroundColor: '#f0faf0', marginBottom: 8 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  box: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 20, maxHeight: '93%',
+  },
+  modalHeader: {
+    backgroundColor: CHILLI.red, borderRadius: 12,
+    padding: 14, marginBottom: 16,
+  },
+  title: { fontSize: 17, fontWeight: '800', color: '#fff' },
+  titleSub: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 3 },
+  lbl: { fontSize: 13, color: CHILLI.textPrimary, fontWeight: '600', marginBottom: 6, marginTop: 12 },
+  input: {
+    borderWidth: 1.5, borderColor: '#ddd', borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 11, fontSize: 14,
+    color: CHILLI.textPrimary, backgroundColor: '#fafafa',
+  },
+  totalRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 10, backgroundColor: CHILLI.cream, borderRadius: 10,
+    paddingHorizontal: 14, marginBottom: 4,
+  },
+  totalLbl: { fontSize: 14, fontWeight: '700', color: CHILLI.textPrimary },
+  totalVal: { fontSize: 24, fontWeight: '800', color: CHILLI.red },
+  payMethodRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
+  payMethodBtn: {
+    flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10,
+    borderWidth: 1.5, borderColor: '#ddd', backgroundColor: '#fafafa',
+  },
+  payMethodBtnActive: { borderColor: CHILLI.green, backgroundColor: '#f0faf5' },
+  payMethodIcon: { fontSize: 22 },
+  payMethodTxt: { fontSize: 12, color: CHILLI.textSecondary, marginTop: 2, fontWeight: '600' },
+  payMethodSub: { fontSize: 10, color: CHILLI.textLight, marginTop: 1 },
+  payMethodTxtActive: { color: CHILLI.green },
+  cashInput: {
+    borderWidth: 2, borderColor: CHILLI.green, borderRadius: 12,
+    paddingHorizontal: 16, paddingVertical: 12,
+    fontSize: 28, fontWeight: '800', color: CHILLI.green,
+    textAlign: 'right', backgroundColor: '#f0faf5', marginBottom: 8,
+  },
   quickRow: { flexDirection: 'row', gap: 6, paddingVertical: 4 },
   quickBtn: { backgroundColor: '#f0f0f0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
-  quickTxt: { fontSize: 13, fontWeight: '600', color: '#333' },
-  changeBox: { backgroundColor: '#f0faf0', borderRadius: 8, padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  changeLbl: { fontSize: 13, color: '#555', fontWeight: '600' },
-  changeVal: { fontSize: 22, fontWeight: 'bold', color: '#27ae60' },
-  infoBox: { backgroundColor: '#fef5f5', borderRadius: 8, padding: 14, marginTop: 8 },
-  infoTxt: { fontSize: 15, fontWeight: 'bold', color: '#c0392b' },
-  infoSub: { fontSize: 12, color: '#888', marginTop: 4 },
-  btnRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  btn: { flex: 1, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
-  btnGrey: { backgroundColor: '#f0f0f0' },
-  btnGreen: { backgroundColor: '#27ae60', flex: 2 },
-  btnGreyTxt: { fontSize: 14, color: '#555', fontWeight: '600' },
-  btnGreySub: { fontSize: 10, color: '#888', marginTop: 2 },
-  btnGreenTxt: { fontSize: 14, color: '#fff', fontWeight: 'bold' },
-  btnGreenSub: { fontSize: 10, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
+  quickTxt: { fontSize: 13, fontWeight: '600', color: CHILLI.textPrimary },
+  changeBox: {
+    backgroundColor: '#f0faf5', borderRadius: 10, padding: 12,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8,
+  },
+  changeLbl: { fontSize: 13, color: CHILLI.textPrimary, fontWeight: '600' },
+  changeVal: { fontSize: 24, fontWeight: '800', color: CHILLI.green },
+  infoBox: { backgroundColor: CHILLI.cream, borderRadius: 10, padding: 14, marginTop: 8 },
+  infoTxt: { fontSize: 15, fontWeight: '700', color: CHILLI.red },
+  infoSub: { fontSize: 12, color: CHILLI.textSecondary, marginTop: 4 },
+  btnRow: { flexDirection: 'row', gap: 10, marginTop: 18 },
+  btn: { flex: 1, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  btnGrey: { backgroundColor: CHILLI.grayLight },
+  btnGreen: { backgroundColor: CHILLI.green, flex: 2 },
+  btnGreyTxt: { fontSize: 14, color: CHILLI.textPrimary, fontWeight: '600' },
+  btnGreenTxt: { fontSize: 14, color: '#fff', fontWeight: '700' },
 });
 
 const stk = StyleSheet.create({
-  preview: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 16, marginVertical: 12, alignItems: 'center' },
-  shopName: { fontSize: 14, fontWeight: 'bold', color: '#333' },
-  divider: { width: '100%', height: 1, backgroundColor: '#ddd', marginVertical: 8 },
-  nameTh: { fontSize: 16, fontWeight: 'bold', color: '#c0392b', textAlign: 'center' },
-  nameSub: { fontSize: 13, color: '#888', marginTop: 2, textAlign: 'center' },
-  detail: { fontSize: 13, color: '#555', marginTop: 4 },
-  total: { fontSize: 28, fontWeight: 'bold', color: '#c0392b', marginTop: 8 },
-  date: { fontSize: 11, color: '#aaa', marginTop: 4 },
+  preview: {
+    backgroundColor: '#fff', borderWidth: 1.5, borderColor: CHILLI.borderLight,
+    borderRadius: 12, padding: 16, marginVertical: 14,
+  },
+  previewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  shopName: { fontSize: 14, fontWeight: '700', color: CHILLI.textPrimary },
+  date: { fontSize: 11, color: CHILLI.textSecondary },
+  divider: { width: '100%', height: 1.5, backgroundColor: '#eeebe8', marginVertical: 8 },
+  nameTh: { fontSize: 18, fontWeight: '800', color: CHILLI.red, textAlign: 'center' },
+  nameSub: { fontSize: 13, color: CHILLI.textSecondary, marginTop: 3, textAlign: 'center' },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 4 },
+  detail: { fontSize: 13, color: CHILLI.textPrimary, marginTop: 4 },
+  total: { fontSize: 32, fontWeight: '800', color: CHILLI.red, textAlign: 'center', marginTop: 10 },
 });

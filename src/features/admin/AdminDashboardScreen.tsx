@@ -7,6 +7,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAppStore } from "../../core/store/appStore";
 import { DB } from "../../core/database/DatabaseService";
 import { t, Lang } from "../../core/i18n/translations";
+import { CHILLI, FONT, SPACE, RADIUS, shadow } from "../../core/theme";
 
 const LANGS: { code: Lang; flag: string }[] = [
   { code: 'th', flag: '🇹🇭' },
@@ -31,7 +32,6 @@ export default function AdminDashboardScreen({ navigation }: any) {
       setStats(s);
       setProductCount(DB.getAllProducts().length);
       setCustomerCount(DB.getAllCustomers().length);
-      // ดึง Cashier PIN ปัจจุบัน (หมุนอัตโนมัติถ้าครบ 5 วัน)
       const pin = DB.rotateCashierPinIfNeeded();
       setCashierPin(pin);
     } catch (e) {
@@ -39,19 +39,16 @@ export default function AdminDashboardScreen({ navigation }: any) {
     }
   }, []));
 
-  const lbl = (key: string) =>
-    lang !== 'th' ? `${t(key, 'th')}\n${t(key, lang)}` : t(key, 'th');
-
-  const lblInline = (key: string) =>
-    lang !== 'th' ? `${t(key, 'th')} / ${t(key, lang)}` : t(key, 'th');
+  const bi = (key: string) =>
+    lang !== 'th' ? `${t(key,'th')} / ${t(key,lang)}` : t(key,'th');
 
   return (
     <SafeAreaView style={s.safe}>
-      <StatusBar backgroundColor="#1a252f" barStyle="light-content" />
+      <StatusBar backgroundColor={CHILLI.dark} barStyle="light-content" />
 
       {/* ── Navbar ── */}
       <View style={s.navbar}>
-        <View style={s.navLeft}>
+        <View style={{ flex: 1 }}>
           <Text style={s.navTitle}>👑 {t('role_admin','th')}</Text>
           {lang !== 'th' && <Text style={s.navSub}>{t('role_admin', lang)}</Text>}
         </View>
@@ -61,217 +58,423 @@ export default function AdminDashboardScreen({ navigation }: any) {
               key={l.code}
               style={[s.langBtn, lang === l.code && s.langBtnOn]}
               onPress={() => setLang(l.code)}
+              activeOpacity={0.75}
             >
-              <Text style={s.langFlag}>{l.flag}</Text>
+              <Text style={{ fontSize: 18 }}>{l.flag}</Text>
             </TouchableOpacity>
           ))}
         </View>
-        <TouchableOpacity style={s.logoutBtn} onPress={() =>
-          Alert.alert('ออกจากระบบ', 'ต้องการออก?', [
-            { text: t('cancel','th'), style: 'cancel' },
-            { text: t('confirm','th'), onPress: logout },
-          ])
-        }>
-          <Text style={s.logoutTxt}>🚪</Text>
+        <TouchableOpacity
+          style={s.logoutBtn}
+          onPress={() =>
+            Alert.alert(
+              bi('logout'),
+              bi('confirm_logout'),
+              [
+                { text: t('cancel','th'), style: 'cancel' },
+                { text: t('confirm','th'), onPress: logout },
+              ]
+            )
+          }
+          activeOpacity={0.75}
+        >
+          <Text style={{ fontSize: 18 }}>🚪</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={s.body} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
 
-        {/* ── Shop Name ── */}
-        <View style={s.shopBanner}>
-          <Text style={s.shopName}>🌶️ {settings?.shop_name || 'J.Rung Chilli'}</Text>
-          <Text style={s.shopSub}>Mae Sot · {t('dashboard','th')}{lang !== 'th' ? ` / ${t('dashboard',lang)}` : ''}</Text>
-        </View>
-
-        {/* ── Stats Grid (กดได้เพื่อ drill-down) ── */}
-        <View style={s.statsGrid}>
-          <TouchableOpacity
-            style={[s.statCard, { backgroundColor: '#27ae60' }]}
-            onPress={() => navigation.navigate('AllOrders')}
-            activeOpacity={0.85}
-          >
-            <Text style={s.statIcon}>💰</Text>
-            <Text style={s.statVal}>฿{stats.revenueToday.toLocaleString()}</Text>
-            <Text style={s.statLbl}>{t('revenue_today','th')}</Text>
-            {lang !== 'th' && <Text style={s.statSub}>{t('revenue_today', lang)}</Text>}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.statCard, { backgroundColor: '#2980b9' }]}
-            onPress={() => navigation.navigate('AllOrders')}
-            activeOpacity={0.85}
-          >
-            <Text style={s.statIcon}>📋</Text>
-            <Text style={s.statVal}>{stats.ordersToday}</Text>
-            <Text style={s.statLbl}>{t('orders_today','th')}</Text>
-            {lang !== 'th' && <Text style={s.statSub}>{t('orders_today', lang)}</Text>}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.statCard, { backgroundColor: '#e67e22' }]}
-            onPress={() => navigation.navigate('AllOrders')}
-            activeOpacity={0.85}
-          >
-            <Text style={s.statIcon}>⏳</Text>
-            <Text style={s.statVal}>{stats.pendingOrders}</Text>
-            <Text style={s.statLbl}>{t('pending_orders','th')}</Text>
-            {lang !== 'th' && <Text style={s.statSub}>{t('pending_orders', lang)}</Text>}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.statCard, { backgroundColor: '#c0392b' }]}
-            onPress={() => navigation.navigate('CustomerList')}
-            activeOpacity={0.85}
-          >
-            <Text style={s.statIcon}>⚠️</Text>
-            <Text style={s.statVal}>฿{stats.overdueCredit.toLocaleString()}</Text>
-            <Text style={s.statLbl}>{t('overdue_credit','th')}</Text>
-            {lang !== 'th' && <Text style={s.statSub}>{t('overdue_credit', lang)}</Text>}
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Quick Summary ── */}
-        <View style={s.summaryRow}>
-          <View style={s.summaryCard}>
-            <Text style={s.summaryIcon}>📦</Text>
-            <Text style={s.summaryVal}>{productCount}</Text>
-            <Text style={s.summaryLbl}>{t('products','th')}</Text>
-            {lang !== 'th' && <Text style={s.summarySub}>{t('products', lang)}</Text>}
-          </View>
-          <View style={s.summaryCard}>
-            <Text style={s.summaryIcon}>👥</Text>
-            <Text style={s.summaryVal}>{customerCount}</Text>
-            <Text style={s.summaryLbl}>{t('customers','th')}</Text>
-            {lang !== 'th' && <Text style={s.summarySub}>{t('customers', lang)}</Text>}
-          </View>
-        </View>
-
-        {/* ── Cashier PIN Card (Admin Only) ── */}
-        <View style={s.pinCard}>
-          <View style={s.pinCardLeft}>
-            <Text style={s.pinCardIcon}>🔐</Text>
-            <View>
-              <Text style={s.pinCardTitle}>
-                รหัสแคชเชียร์วันนี้{lang !== 'th' ? ` / Cashier PIN` : ''}
-              </Text>
-              <Text style={s.pinCardSub}>
-                หมุนใหม่ทุก 5 วัน • เฉพาะ Admin เท่านั้น
+        {/* ── Shop Hero Banner ── */}
+        <View style={s.heroBanner}>
+          <View style={s.heroDecor} />
+          <View style={s.heroDecor2} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={s.heroLogoRing}>
+              <Text style={{ fontSize: 32 }}>🌶️</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.heroShopName}>{settings?.shop_name || 'J.Rung Chilli'}</Text>
+              <Text style={s.heroShopSub}>
+                Mae Sot · {t('dashboard','th')}{lang !== 'th' ? ` / ${t('dashboard',lang)}` : ''}
               </Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={s.pinToggleBtn}
-            onPress={() => setShowPin(v => !v)}
-            activeOpacity={0.75}
-          >
-            <Text style={s.pinValue}>
-              {showPin ? cashierPin : '● ● ● ●'}
-            </Text>
-            <Text style={s.pinEyeIcon}>{showPin ? '🙈' : '👁️'}</Text>
-          </TouchableOpacity>
+        </View>
+
+        {/* ── Stats Grid ── */}
+        <View style={s.statsSection}>
+          <Text style={s.sectionLabel}>
+            📊 สถิติวันนี้{lang !== 'th' ? ` / ${t('today',lang)}` : ''}
+          </Text>
+          <View style={s.statsGrid}>
+
+            {/* Revenue */}
+            <TouchableOpacity
+              style={[s.statCard, { borderTopColor: CHILLI.green }]}
+              onPress={() => navigation.navigate('AllOrders')}
+              activeOpacity={0.82}
+            >
+              <View style={[s.statIconBg, { backgroundColor: '#e8f8f0' }]}>
+                <Text style={s.statIconEmoji}>💰</Text>
+              </View>
+              <Text style={s.statVal}>฿{stats.revenueToday.toLocaleString()}</Text>
+              <Text style={s.statLblTh}>{t('revenue_today','th')}</Text>
+              {lang !== 'th' && <Text style={s.statLblSub}>{t('revenue_today',lang)}</Text>}
+              <View style={[s.statIndicator, { backgroundColor: CHILLI.green }]} />
+            </TouchableOpacity>
+
+            {/* Orders Today */}
+            <TouchableOpacity
+              style={[s.statCard, { borderTopColor: CHILLI.blue }]}
+              onPress={() => navigation.navigate('AllOrders')}
+              activeOpacity={0.82}
+            >
+              <View style={[s.statIconBg, { backgroundColor: '#e8f4fd' }]}>
+                <Text style={s.statIconEmoji}>📋</Text>
+              </View>
+              <Text style={s.statVal}>{stats.ordersToday}</Text>
+              <Text style={s.statLblTh}>{t('orders_today','th')}</Text>
+              {lang !== 'th' && <Text style={s.statLblSub}>{t('orders_today',lang)}</Text>}
+              <View style={[s.statIndicator, { backgroundColor: CHILLI.blue }]} />
+            </TouchableOpacity>
+
+            {/* Pending */}
+            <TouchableOpacity
+              style={[s.statCard, { borderTopColor: CHILLI.orange }]}
+              onPress={() => navigation.navigate('AllOrders')}
+              activeOpacity={0.82}
+            >
+              <View style={[s.statIconBg, { backgroundColor: '#fef5ea' }]}>
+                <Text style={s.statIconEmoji}>⏳</Text>
+              </View>
+              <Text style={s.statVal}>{stats.pendingOrders}</Text>
+              <Text style={s.statLblTh}>{t('pending_orders','th')}</Text>
+              {lang !== 'th' && <Text style={s.statLblSub}>{t('pending_orders',lang)}</Text>}
+              <View style={[s.statIndicator, { backgroundColor: CHILLI.orange }]} />
+            </TouchableOpacity>
+
+            {/* Overdue Credit */}
+            <TouchableOpacity
+              style={[s.statCard, { borderTopColor: CHILLI.red }]}
+              onPress={() => navigation.navigate('CustomerList')}
+              activeOpacity={0.82}
+            >
+              <View style={[s.statIconBg, { backgroundColor: '#fceaea' }]}>
+                <Text style={s.statIconEmoji}>⚠️</Text>
+              </View>
+              <Text style={[s.statVal, stats.overdueCredit > 0 && { color: CHILLI.red }]}>
+                ฿{stats.overdueCredit.toLocaleString()}
+              </Text>
+              <Text style={s.statLblTh}>{t('overdue_credit','th')}</Text>
+              {lang !== 'th' && <Text style={s.statLblSub}>{t('overdue_credit',lang)}</Text>}
+              <View style={[s.statIndicator, { backgroundColor: CHILLI.red }]} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ── Summary Row ── */}
+        <View style={s.summaryRow}>
+          <View style={[s.summaryCard, { borderLeftColor: CHILLI.red }]}>
+            <Text style={s.summaryIcon}>📦</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={s.summaryVal}>{productCount} <Text style={s.summaryUnit}>รายการ</Text></Text>
+              <Text style={s.summaryLblTh}>{t('products','th')}</Text>
+              {lang !== 'th' && <Text style={s.summaryLblSub}>{t('products',lang)}</Text>}
+            </View>
+            <TouchableOpacity
+              style={s.summaryLink}
+              onPress={() => navigation.navigate('ProductList')}
+              activeOpacity={0.75}
+            >
+              <Text style={s.summaryLinkTxt}>ดูทั้งหมด ›</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={[s.summaryCard, { borderLeftColor: CHILLI.blue }]}>
+            <Text style={s.summaryIcon}>👥</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={s.summaryVal}>{customerCount} <Text style={s.summaryUnit}>ราย</Text></Text>
+              <Text style={s.summaryLblTh}>{t('customers','th')}</Text>
+              {lang !== 'th' && <Text style={s.summaryLblSub}>{t('customers',lang)}</Text>}
+            </View>
+            <TouchableOpacity
+              style={s.summaryLink}
+              onPress={() => navigation.navigate('CustomerList')}
+              activeOpacity={0.75}
+            >
+              <Text style={s.summaryLinkTxt}>ดูทั้งหมด ›</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ── Cashier PIN Card ── */}
+        <View style={s.pinSection}>
+          <View style={s.pinCard}>
+            <View style={s.pinLeft}>
+              <View style={s.pinIconBg}>
+                <Text style={{ fontSize: 26 }}>🔐</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.pinTitle}>
+                  {t('cashier_pin_card','th')}
+                  {lang !== 'th' ? ` / ${t('cashier_pin_card',lang)}` : ''}
+                </Text>
+                <Text style={s.pinSub}>
+                  {t('pin_rotates','th')}{lang !== 'th' ? ` / ${t('pin_rotates',lang)}` : ''} • Admin only
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={s.pinToggleBtn}
+              onPress={() => setShowPin(v => !v)}
+              activeOpacity={0.75}
+            >
+              <Text style={s.pinValue}>
+                {showPin ? cashierPin : '● ● ● ●'}
+              </Text>
+              <Text style={s.pinEye}>{showPin ? '🙈' : '👁️'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* ── Management Menu ── */}
-        <Text style={s.sectionTitle}>
-          ⚙️ {t('manage_system','th')}{lang !== 'th' ? ` / ${t('manage_system',lang)}` : ''}
-        </Text>
+        <View style={s.menuSection}>
+          <Text style={s.sectionLabel}>
+            ⚙️ {t('manage_system','th')}{lang !== 'th' ? ` / ${t('manage_system',lang)}` : ''}
+          </Text>
+          <View style={s.menuGrid}>
 
-        <View style={s.menuGrid}>
-          {/* สินค้า */}
-          <TouchableOpacity style={[s.menuCard, { borderLeftColor: '#c0392b' }]} onPress={() => navigation.navigate('ProductList')} activeOpacity={0.85}>
-            <Text style={s.menuIcon}>📦</Text>
-            <Text style={s.menuTitleTh}>{t('products','th')}</Text>
-            {lang !== 'th' && <Text style={s.menuTitleSub}>{t('products', lang)}</Text>}
-            <Text style={s.menuDesc}>{productCount} รายการ</Text>
-          </TouchableOpacity>
-
-          {/* เพิ่มสินค้า */}
-          <TouchableOpacity style={[s.menuCard, { borderLeftColor: '#8e44ad' }]} onPress={() => navigation.navigate('AddProduct')} activeOpacity={0.85}>
-            <Text style={s.menuIcon}>➕📦</Text>
-            <Text style={s.menuTitleTh}>{t('add_product','th')}</Text>
-            {lang !== 'th' && <Text style={s.menuTitleSub}>{t('add_product', lang)}</Text>}
-            <Text style={s.menuDesc}>เพิ่มสินค้าใหม่</Text>
-          </TouchableOpacity>
-
-          {/* ลูกค้า */}
-          <TouchableOpacity style={[s.menuCard, { borderLeftColor: '#27ae60' }]} onPress={() => navigation.navigate('CustomerList')} activeOpacity={0.85}>
-            <Text style={s.menuIcon}>👥</Text>
-            <Text style={s.menuTitleTh}>{t('customers','th')}</Text>
-            {lang !== 'th' && <Text style={s.menuTitleSub}>{t('customers', lang)}</Text>}
-            <Text style={s.menuDesc}>{customerCount} ราย</Text>
-          </TouchableOpacity>
-
-          {/* เพิ่มลูกค้า */}
-          <TouchableOpacity style={[s.menuCard, { borderLeftColor: '#2980b9' }]} onPress={() => navigation.navigate('AddCustomer')} activeOpacity={0.85}>
-            <Text style={s.menuIcon}>➕👤</Text>
-            <Text style={s.menuTitleTh}>{t('add_customer','th')}</Text>
-            {lang !== 'th' && <Text style={s.menuTitleSub}>{t('add_customer', lang)}</Text>}
-            <Text style={s.menuDesc}>เพิ่มลูกค้าใหม่</Text>
-          </TouchableOpacity>
-
-          {/* ออเดอร์ */}
-          <TouchableOpacity style={[s.menuCard, { borderLeftColor: '#e67e22' }]} onPress={() => navigation.navigate('AllOrders')} activeOpacity={0.85}>
-            <Text style={s.menuIcon}>📋</Text>
-            <Text style={s.menuTitleTh}>{t('orders','th')}</Text>
-            {lang !== 'th' && <Text style={s.menuTitleSub}>{t('orders', lang)}</Text>}
-            <Text style={s.menuDesc}>{stats.ordersToday} วันนี้</Text>
-          </TouchableOpacity>
-
-          {/* ปริ้นเตอร์ */}
-          <TouchableOpacity style={[s.menuCard, { borderLeftColor: '#7f8c8d' }]} onPress={() => navigation.navigate('PrinterSettings')} activeOpacity={0.85}>
-            <Text style={s.menuIcon}>🖨️</Text>
-            <Text style={s.menuTitleTh}>{t('settings','th')}</Text>
-            {lang !== 'th' && <Text style={s.menuTitleSub}>{t('settings', lang)}</Text>}
-            <Text style={s.menuDesc}>Printer / เครื่องพิมพ์</Text>
-          </TouchableOpacity>
+            {[
+              {
+                icon:'📦', titleKey:'products', desc:`${productCount} รายการ`,
+                nav:'ProductList', accentColor: CHILLI.red,
+              },
+              {
+                icon:'➕', titleKey:'add_product', desc:'เพิ่มสินค้าใหม่',
+                nav:'AddProduct', accentColor: CHILLI.purple,
+              },
+              {
+                icon:'👥', titleKey:'customers', desc:`${customerCount} ราย`,
+                nav:'CustomerList', accentColor: CHILLI.green,
+              },
+              {
+                icon:'👤', titleKey:'add_customer', desc:'เพิ่มลูกค้าใหม่',
+                nav:'AddCustomer', accentColor: CHILLI.blue,
+              },
+              {
+                icon:'📋', titleKey:'orders', desc:`${stats.ordersToday} วันนี้`,
+                nav:'AllOrders', accentColor: CHILLI.orange,
+              },
+              {
+                icon:'🖨️', titleKey:'printer_settings', desc:'Bluetooth Printer',
+                nav:'PrinterSettings', accentColor: CHILLI.gray,
+              },
+            ].map((item, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={s.menuCard}
+                onPress={() => navigation.navigate(item.nav)}
+                activeOpacity={0.82}
+              >
+                <View style={[s.menuIconBg, { backgroundColor: item.accentColor + '18' }]}>
+                  <Text style={s.menuIconEmoji}>{item.icon}</Text>
+                </View>
+                <View style={[s.menuAccent, { backgroundColor: item.accentColor }]} />
+                <Text style={s.menuTitleTh}>{t(item.titleKey,'th')}</Text>
+                {lang !== 'th' && (
+                  <Text style={s.menuTitleSub}>{t(item.titleKey,lang)}</Text>
+                )}
+                <Text style={s.menuDesc}>{item.desc}</Text>
+                <Text style={[s.menuArrow, { color: item.accentColor }]}>›</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
+        {/* ── Footer ── */}
+        <Text style={s.footer}>🌶️ JRungChilli POS v2.8 © 2025</Text>
         <View style={{ height: 24 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f0f0f0' },
-  navbar: { backgroundColor: '#1a252f', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, elevation: 4, gap: 8 },
-  navLeft: { flex: 1 },
-  navTitle: { fontSize: 15, fontWeight: 'bold', color: '#fff' },
-  navSub: { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 1 },
-  langRow: { flexDirection: 'row', gap: 4 },
-  langBtn: { padding: 5, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.12)' },
-  langBtnOn: { backgroundColor: '#f39c12' },
-  langFlag: { fontSize: 18 },
-  logoutBtn: { backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 8, padding: 8 },
-  logoutTxt: { fontSize: 18 },
-  body: { flex: 1 },
-  shopBanner: { backgroundColor: '#1a252f', paddingHorizontal: 16, paddingVertical: 14 },
-  shopName: { fontSize: 18, fontWeight: 'bold', color: '#f39c12' },
-  shopSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 3 },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 10, gap: 8 },
-  statCard: { width: '47%', borderRadius: 12, padding: 14, alignItems: 'center', elevation: 2 },
-  statIcon: { fontSize: 26, marginBottom: 6 },
-  statVal: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
-  statLbl: { fontSize: 11, color: 'rgba(255,255,255,0.9)', marginTop: 4, textAlign: 'center', fontWeight: '600' },
-  statSub: { fontSize: 10, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginTop: 2 },
-  summaryRow: { flexDirection: 'row', paddingHorizontal: 10, gap: 8, marginBottom: 4 },
-  summaryCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 14, alignItems: 'center', elevation: 2 },
-  summaryIcon: { fontSize: 28, marginBottom: 4 },
-  summaryVal: { fontSize: 24, fontWeight: 'bold', color: '#333' },
-  summaryLbl: { fontSize: 12, color: '#555', fontWeight: '600', marginTop: 2 },
-  summarySub: { fontSize: 10, color: '#aaa', marginTop: 1 },
-  sectionTitle: { fontSize: 14, fontWeight: 'bold', color: '#333', paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8 },
-  menuGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 10, gap: 8 },
-  menuCard: { width: '47%', backgroundColor: '#fff', borderRadius: 12, padding: 14, elevation: 2, borderLeftWidth: 4 },
-  menuIcon: { fontSize: 28, marginBottom: 8 },
-  menuTitleTh: { fontSize: 14, fontWeight: 'bold', color: '#333' },
-  menuTitleSub: { fontSize: 11, color: '#888', marginTop: 2 },
-  menuDesc: { fontSize: 11, color: '#aaa', marginTop: 4 },
-  // Cashier PIN Card
-  pinCard: { marginHorizontal: 10, marginBottom: 8, backgroundColor: '#1a252f', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', elevation: 3 },
-  pinCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  pinCardIcon: { fontSize: 28 },
-  pinCardTitle: { fontSize: 13, fontWeight: 'bold', color: '#f39c12' },
-  pinCardSub: { fontSize: 10, color: 'rgba(255,255,255,0.55)', marginTop: 2 },
-  pinToggleBtn: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 14, minWidth: 90 },
-  pinValue: { fontSize: 22, fontWeight: 'bold', color: '#fff', letterSpacing: 4, textAlign: 'center' },
-  pinEyeIcon: { fontSize: 16, marginTop: 4 },
+  safe: { flex: 1, backgroundColor: CHILLI.cream },
+
+  // Navbar
+  navbar: {
+    backgroundColor: CHILLI.dark,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACE.md,
+    paddingVertical: SPACE.sm + 2,
+    gap: 8,
+    ...shadow(3),
+  },
+  navTitle: { fontSize: FONT.size.base, fontWeight: FONT.weight.bold, color: '#fff' },
+  navSub:   { fontSize: FONT.size.xs, color: 'rgba(255,255,255,0.65)', marginTop: 1 },
+  langRow:  { flexDirection: 'row', gap: 4 },
+  langBtn:  { padding: 5, borderRadius: RADIUS.sm, backgroundColor: 'rgba(255,255,255,0.1)' },
+  langBtnOn:{ backgroundColor: CHILLI.orangeLight },
+  logoutBtn:{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: RADIUS.sm, padding: 7 },
+
+  // Hero Banner
+  heroBanner: {
+    backgroundColor: CHILLI.dark,
+    paddingHorizontal: SPACE.lg,
+    paddingVertical: 18,
+    overflow: 'hidden',
+  },
+  heroDecor: {
+    position: 'absolute', right: -30, top: -30,
+    width: 120, height: 120, borderRadius: 60,
+    backgroundColor: 'rgba(192,57,43,0.25)',
+  },
+  heroDecor2: {
+    position: 'absolute', left: -20, bottom: -20,
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: 'rgba(230,126,34,0.15)',
+  },
+  heroLogoRing: {
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: 'rgba(192,57,43,0.35)',
+    borderWidth: 2, borderColor: 'rgba(192,57,43,0.6)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  heroShopName: { fontSize: FONT.size.xl, fontWeight: FONT.weight.extrabold, color: CHILLI.orangeLight },
+  heroShopSub:  { fontSize: FONT.size.sm, color: 'rgba(255,255,255,0.6)', marginTop: 3 },
+
+  // Stats
+  statsSection: { padding: SPACE.md },
+  statsGrid:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  statCard: {
+    width: '47.5%',
+    backgroundColor: CHILLI.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACE.md,
+    borderTopWidth: 4,
+    overflow: 'hidden',
+    ...shadow(2),
+  },
+  statIconBg: {
+    width: 42, height: 42, borderRadius: RADIUS.md,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 10,
+  },
+  statIconEmoji: { fontSize: 22 },
+  statVal:    { fontSize: FONT.size['2xl'], fontWeight: FONT.weight.extrabold, color: CHILLI.textPrimary },
+  statLblTh:  { fontSize: FONT.size.sm, color: CHILLI.textSecondary, marginTop: 4, fontWeight: FONT.weight.semibold },
+  statLblSub: { fontSize: 10, color: CHILLI.textLight, marginTop: 1 },
+  statIndicator: {
+    position: 'absolute', right: 0, top: 0, bottom: 0,
+    width: 3,
+  },
+
+  sectionLabel: {
+    fontSize: FONT.size.sm,
+    fontWeight: FONT.weight.bold,
+    color: CHILLI.textSecondary,
+    marginBottom: SPACE.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  // Summary Row
+  summaryRow: {
+    flexDirection: 'row',
+    paddingHorizontal: SPACE.md,
+    gap: 8,
+    marginBottom: 8,
+  },
+  summaryCard: {
+    flex: 1,
+    backgroundColor: CHILLI.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACE.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    gap: 10,
+    ...shadow(1),
+  },
+  summaryIcon:    { fontSize: 26 },
+  summaryVal:     { fontSize: FONT.size.xl, fontWeight: FONT.weight.extrabold, color: CHILLI.textPrimary },
+  summaryUnit:    { fontSize: FONT.size.sm, fontWeight: FONT.weight.normal, color: CHILLI.textSecondary },
+  summaryLblTh:   { fontSize: FONT.size.sm, color: CHILLI.textSecondary, fontWeight: FONT.weight.semibold, marginTop: 1 },
+  summaryLblSub:  { fontSize: FONT.size.xs, color: CHILLI.textLight },
+  summaryLink:    { paddingVertical: 4 },
+  summaryLinkTxt: { fontSize: FONT.size.xs, color: CHILLI.red, fontWeight: FONT.weight.bold },
+
+  // PIN Card
+  pinSection: { paddingHorizontal: SPACE.md, marginBottom: 8 },
+  pinCard: {
+    backgroundColor: CHILLI.dark,
+    borderRadius: RADIUS.lg,
+    padding: SPACE.base,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    ...shadow(2),
+  },
+  pinLeft:   { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  pinIconBg: {
+    width: 48, height: 48, borderRadius: RADIUS.md,
+    backgroundColor: 'rgba(192,57,43,0.3)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  pinTitle: { fontSize: FONT.size.sm, fontWeight: FONT.weight.bold, color: CHILLI.orangeLight },
+  pinSub:   { fontSize: FONT.size.xs, color: 'rgba(255,255,255,0.45)', marginTop: 2 },
+  pinToggleBtn: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: RADIUS.md,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    minWidth: 90,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  pinValue: {
+    fontSize: 20, fontWeight: FONT.weight.extrabold,
+    color: '#fff', letterSpacing: 5, textAlign: 'center',
+  },
+  pinEye: { fontSize: 14, marginTop: 4 },
+
+  // Management Menu
+  menuSection: { paddingHorizontal: SPACE.md, marginBottom: 4 },
+  menuGrid:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  menuCard: {
+    width: '47.5%',
+    backgroundColor: CHILLI.white,
+    borderRadius: RADIUS.lg,
+    padding: SPACE.md,
+    position: 'relative',
+    overflow: 'hidden',
+    ...shadow(2),
+  },
+  menuIconBg: {
+    width: 44, height: 44, borderRadius: RADIUS.md,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 10,
+  },
+  menuIconEmoji: { fontSize: 22 },
+  menuAccent: {
+    position: 'absolute', left: 0, top: 0, bottom: 0,
+    width: 4,
+  },
+  menuTitleTh:  { fontSize: FONT.size.md, fontWeight: FONT.weight.bold, color: CHILLI.textPrimary, paddingLeft: 4 },
+  menuTitleSub: { fontSize: FONT.size.xs, color: CHILLI.textSecondary, marginTop: 1, paddingLeft: 4 },
+  menuDesc:     { fontSize: FONT.size.xs, color: CHILLI.textLight, marginTop: 4, paddingLeft: 4 },
+  menuArrow: {
+    position: 'absolute', right: 12, bottom: 12,
+    fontSize: 20, fontWeight: FONT.weight.bold,
+  },
+
+  footer: {
+    textAlign: 'center',
+    fontSize: 11,
+    color: CHILLI.textLight,
+    marginTop: 12,
+  },
 });
