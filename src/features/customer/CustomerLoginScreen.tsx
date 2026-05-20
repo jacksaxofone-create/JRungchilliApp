@@ -1,9 +1,10 @@
 import React, { useState, useRef } from "react";
 import {
   View, Text, TouchableOpacity, TextInput, Alert,
-  StyleSheet, SafeAreaView, StatusBar, ScrollView,
+  StyleSheet, StatusBar, ScrollView,
   ActivityIndicator, Animated,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppStore } from "../../core/store/appStore";
 import { DB } from "../../core/database/DatabaseService";
 import { t, Lang } from "../../core/i18n/translations";

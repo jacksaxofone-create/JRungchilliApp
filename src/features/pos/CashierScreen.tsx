@@ -1,9 +1,10 @@
 import React, { useState, useCallback, useRef } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, TextInput,
-  Alert, SafeAreaView, StatusBar, Modal, ScrollView,
+  Alert, StatusBar, Modal, ScrollView,
   ActivityIndicator, StyleSheet, Animated,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAppStore } from "../../core/store/appStore";
 import { DB } from "../../core/database/DatabaseService";
@@ -572,7 +573,7 @@ function WalkinSale({ lang, setLang, settings, onBack }: any) {
       {/* Navbar */}
       <View style={ws.navbar}>
         <TouchableOpacity onPress={onBack} style={ws.backBtn}>
-          <Text style={ws.backBtnTxt}>← {t('back', 'th')}</Text>
+          <Text style={ws.backBtnTxt}>🏠 BACK</Text>
         </TouchableOpacity>
         <View style={ws.navCenter}>
           <View style={ws.navLogoRing}>
@@ -1240,7 +1241,7 @@ function PackOrdersMode({ lang, setLang, settings, onBack }: any) {
         {/* Navbar */}
         <View style={pk.navbar}>
           <TouchableOpacity onPress={() => { setSelectedOrder(null); loadOrders(); }} style={pk.backBtn}>
-            <Text style={pk.backTxt}>← {t('back', 'th')}</Text>
+            <Text style={pk.backTxt}>🏠 BACK</Text>
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
             <Text style={pk.navTitle} numberOfLines={1}>📦 {selectedOrder.customer_name}</Text>
@@ -1335,7 +1336,7 @@ function PackOrdersMode({ lang, setLang, settings, onBack }: any) {
       {/* Navbar */}
       <View style={pk.navbar}>
         <TouchableOpacity onPress={onBack} style={pk.backBtn}>
-          <Text style={pk.backTxt}>← {t('back', 'th')}</Text>
+          <Text style={pk.backTxt}>🏠 BACK</Text>
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={pk.navTitle}>📦 แพคออเดอร์</Text>

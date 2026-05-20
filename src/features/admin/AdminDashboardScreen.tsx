@@ -1,8 +1,9 @@
 ﻿import React, { useCallback } from "react";
 import {
   View, Text, TouchableOpacity, ScrollView,
-  StyleSheet, SafeAreaView, StatusBar, Alert,
+  StyleSheet, StatusBar, Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAppStore } from "../../core/store/appStore";
 import { DB } from "../../core/database/DatabaseService";

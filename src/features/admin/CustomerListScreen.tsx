@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
-  StyleSheet, SafeAreaView, StatusBar, Alert,
+  StyleSheet, StatusBar, Alert,
   ActivityIndicator, Modal, ScrollView, Clipboard,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAppStore } from "../../core/store/appStore";
 import { DB } from "../../core/database/DatabaseService";
@@ -65,7 +66,7 @@ export default function CustomerListScreen({ navigation }: any) {
       {/* ─── Header ─── */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={s.backTxt}>‹ {t('back', 'th')}</Text>
+          <Text style={s.backTxt}>🏠 BACK</Text>
         </TouchableOpacity>
         <View style={s.headerCenter}>
           <Text style={s.headerTitle}>

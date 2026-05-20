@@ -18,10 +18,15 @@ import AllOrdersScreen from "../features/admin/AllOrdersScreen";
 
 // Cashier (new)
 import CashierScreen from "../features/pos/CashierScreen";
+import POSScreen from "../features/pos/POSScreen";
 
 // Customer (new)
+import CustomerEntryScreen from "../features/customer/CustomerEntryScreen";
 import CustomerLoginScreen from "../features/customer/CustomerLoginScreen";
 import CustomerDashboardScreen from "../features/customer/CustomerDashboardScreen";
+
+// Wholesale
+import WholesaleOrderScreen from "../features/customer/WholesaleOrderScreen";
 
 // Settings
 import PrinterSettingsScreen from "../features/settings/PrinterSettingsScreen";
@@ -85,6 +90,38 @@ function AdminTabs() {
   );
 }
 
+// ── Cashier Bottom Tabs ────────────────────────────────────
+function CashierTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { backgroundColor: "#1a252f", height: 60, paddingBottom: 8 },
+        tabBarActiveTintColor: "#e67e22",
+        tabBarInactiveTintColor: "#aaa",
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+      }}
+    >
+      <Tab.Screen
+        name="CashierMain"
+        component={CashierScreen}
+        options={{
+          tabBarLabel: "แคชเชียร์",
+          tabBarIcon: () => <Text style={{ fontSize: 20 }}>⚖️</Text>,
+        }}
+      />
+      <Tab.Screen
+        name="สั่งสินค้า"
+        component={CustomerEntryScreen}
+        options={{
+          tabBarLabel: "สั่งสินค้า",
+          tabBarIcon: () => <Text style={{ fontSize: 20 }}>🛒</Text>,
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
 // ── Root Navigator ─────────────────────────────────────────
 export default function RootNavigator() {
   const { userRole, isAuthenticated } = useAppStore();
@@ -97,8 +134,14 @@ export default function RootNavigator() {
         {!isAuthenticated ? (
           <>
             <Stack.Screen name="Login"          component={LoginScreen} />
-            {/* Customer Login เข้าได้โดยไม่ต้อง isAuthenticated */}
+            {/* P2.2: CustomerEntry (2-option: Walk-in / Member) */}
+            <Stack.Screen name="CustomerEntry"  component={CustomerEntryScreen} />
+            {/* CustomerLogin ยังคงไว้เพื่อ backward compat */}
             <Stack.Screen name="CustomerLogin"  component={CustomerLoginScreen} />
+            {/* POS walk-in สำหรับลูกค้าทั่วไป */}
+            <Stack.Screen name="POS"            component={POSScreen} />
+            {/* WholesaleOrder สำหรับสมาชิก */}
+            <Stack.Screen name="WholesaleOrder" component={WholesaleOrderScreen} />
           </>
 
         /* ── Admin ── */
@@ -116,7 +159,11 @@ export default function RootNavigator() {
         /* ── Cashier / Stock ── */
         ) : userRole === "cashier" || userRole === "stock" ? (
           <>
+            <Stack.Screen name="CashierHome"     component={CashierTabs} />
             <Stack.Screen name="Cashier"         component={CashierScreen} />
+            <Stack.Screen name="POS"             component={POSScreen} />
+            <Stack.Screen name="CustomerEntry"   component={CustomerEntryScreen} />
+            <Stack.Screen name="WholesaleOrder"  component={WholesaleOrderScreen} />
             <Stack.Screen name="PrinterSettings" component={PrinterSettingsScreen} />
           </>
 
@@ -124,6 +171,7 @@ export default function RootNavigator() {
         ) : userRole === "customer" ? (
           <>
             <Stack.Screen name="CustomerDashboard" component={CustomerDashboardScreen} />
+            <Stack.Screen name="WholesaleOrder"    component={WholesaleOrderScreen} />
           </>
 
         /* ── Fallback ── */

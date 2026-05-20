@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
-  StyleSheet, SafeAreaView, StatusBar, Alert,
+  StyleSheet, StatusBar, Alert,
   ActivityIndicator, Modal, ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAppStore } from "../../core/store/appStore";
 import { DB } from "../../core/database/DatabaseService";
@@ -126,7 +127,7 @@ export default function AllOrdersScreen({ navigation }: any) {
       {/* ── Header ── */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.75}>
-          <Text style={s.backTxt}>‹ {t('back','th')}</Text>
+          <Text style={s.backTxt}>🏠 BACK</Text>
         </TouchableOpacity>
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={s.headerTitle}>📋 ออเดอร์ทั้งหมด</Text>

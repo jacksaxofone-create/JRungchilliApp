@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import {
   View, Text, TouchableOpacity, TextInput,
-  StyleSheet, SafeAreaView, StatusBar, Alert, ScrollView,
+  StyleSheet, StatusBar, Alert, ScrollView,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppStore } from "../../core/store/appStore";
 import { DB } from "../../core/database/DatabaseService";
 import { t } from "../../core/i18n/translations";
@@ -43,7 +44,7 @@ export default function PrinterSettingsScreen({ navigation }: any) {
       {/* ── Header ── */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={s.backTxt}>‹ {t('back','th')}</Text>
+          <Text style={s.backTxt}>🏠 BACK</Text>
         </TouchableOpacity>
         <View style={s.headerCenter}>
           <Text style={s.headerTitle}>🖨️ {t('settings','th')}</Text>

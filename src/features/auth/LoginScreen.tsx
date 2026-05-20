@@ -1,9 +1,10 @@
 import React, { useState, useRef } from "react";
 import {
   View, Text, TouchableOpacity, TextInput, Alert,
-  StyleSheet, SafeAreaView, StatusBar, Animated,
+  StyleSheet, StatusBar, Animated,
   ScrollView, Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useAppStore } from "../../core/store/appStore";
 import { DB } from "../../core/database/DatabaseService";
@@ -151,7 +152,7 @@ export default function LoginScreen() {
 
   const handleAdminSuccess = () => { setUserRole('admin'); setAuthenticated(true); };
   const handleCashier = () => { setUserRole('cashier'); setAuthenticated(true); };
-  const handleCustomer = () => { navigation.navigate('CustomerLogin'); };
+  const handleCustomer = () => { navigation.navigate('CustomerEntry'); };
 
   return (
     <SafeAreaView style={s.safe}>
