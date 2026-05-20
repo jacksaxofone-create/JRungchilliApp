@@ -1,43 +1,65 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+﻿import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { initDatabase } from "./src/core/database/initDb";
 import { DB } from "./src/core/database/DatabaseService";
 import { useAppStore } from "./src/core/store/appStore";
 import RootNavigator from "./src/navigation/RootNavigator";
 
-function SplashScreen() {
-  return (
-    <View style={sp.container}>
-      <Text style={sp.logo}>🌶️</Text>
-      <ActivityIndicator size="large" color="#c0392b" style={{ marginTop: 24 }} />
-      <Text style={sp.text}>กำลังโหลด... / Loading...</Text>
-    </View>
-  );
-}
-
 function AppContent() {
-  const { setSettings } = useAppStore();
   const [ready, setReady] = useState(false);
+  const [error, setError] = useState("");
+  const { setSettings, setProducts, setCustomers } = useAppStore();
 
   useEffect(() => {
-    (async () => {
+    async function bootstrap() {
       try {
+        console.log("[App] Starting bootstrap...");
         await initDatabase();
-        // โหลด settings จาก DB เข้า store
-        const shopName    = DB.getSetting('shop_name')    || 'เจรุ่งชิลลี่';
-        const shopAddress = DB.getSetting('shop_address') || 'แม่สอด';
-        const adminPin    = DB.getSetting('admin_pin')    || '0000';
-        const changeFund  = parseFloat(DB.getSetting('change_fund') || '500');
-        setSettings({ shop_name: shopName, shop_address: shopAddress, admin_pin: adminPin, change_fund: changeFund });
-      } catch (e) {
-        console.error('Init error:', e);
-      } finally {
+        console.log("[App] DB initialized");
+
+        const adminPin    = DB.getSetting("admin_pin")    || "0000";
+        const shopName    = DB.getSetting("shop_name")    || "J.Rung Chilli";
+        const shopAddress = DB.getSetting("shop_address") || "Mae Sot";
+        const changeFund  = parseFloat(DB.getSetting("change_fund") || "500");
+
+        setSettings({ admin_pin: adminPin, shop_name: shopName, shop_address: shopAddress, change_fund: changeFund });
+        console.log("[App] Settings loaded");
+
+        const products  = DB.getAllProducts();
+        const customers = DB.getAllCustomers();
+        setProducts(products);
+        setCustomers(customers);
+        console.log("[App] Loaded " + products.length + " products, " + customers.length + " customers");
+
         setReady(true);
+      } catch (e) {
+        console.error("[App] Bootstrap error:", e);
+        setError(String(e?.message || e));
       }
-    })();
+    }
+    bootstrap();
   }, []);
 
-  if (!ready) return <SplashScreen />;
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={{ color: "red", fontSize: 16, textAlign: "center", padding: 20 }}>
+          {"\u274C"} Error:{"\n"}{error}
+        </Text>
+      </View>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <View style={styles.center}>
+        <Text style={{ fontSize: 28, marginBottom: 16 }}>{"\uD83C\uDF36"}</Text>
+        <ActivityIndicator size="large" color="#c0392b" />
+        <Text style={{ marginTop: 12, color: "#555" }}>Loading JRungChilli POS...</Text>
+      </View>
+    );
+  }
+
   return <RootNavigator />;
 }
 
@@ -45,8 +67,6 @@ export default function App() {
   return <AppContent />;
 }
 
-const sp = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
-  logo: { fontSize: 72 },
-  text: { fontSize: 15, color: '#c0392b', marginTop: 12, fontWeight: '600' },
+const styles = StyleSheet.create({
+  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#fef9f0" },
 });

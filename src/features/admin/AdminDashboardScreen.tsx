@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+﻿import React, { useCallback } from "react";
 import {
   View, Text, TouchableOpacity, ScrollView,
   StyleSheet, SafeAreaView, StatusBar, Alert,
@@ -10,14 +10,14 @@ import { t, Lang } from "../../core/i18n/translations";
 import { CHILLI, FONT, SPACE, RADIUS, shadow } from "../../core/theme";
 
 const LANGS: { code: Lang; flag: string }[] = [
-  { code: 'th', flag: '🇹🇭' },
-  { code: 'mm', flag: '🇲🇲' },
-  { code: 'en', flag: '🇬🇧' },
-  { code: 'cn', flag: '🇨🇳' },
+  { code: 'th', flag: '๐น๐ญ' },
+  { code: 'mm', flag: '๐ฒ๐ฒ' },
+  { code: 'en', flag: '๐ฌ๐ง' },
+  { code: 'cn', flag: '๐จ๐ณ' },
 ];
 
 export default function AdminDashboardScreen({ navigation }: any) {
-  const { lang, setLang, logout, settings } = useAppStore();
+  const { lang, setLang, logout, settings, setProducts, setCustomers } = useAppStore();
   const [stats, setStats] = React.useState({
     revenueToday: 0, ordersToday: 0, pendingOrders: 0, overdueCredit: 0,
   });
@@ -30,6 +30,10 @@ export default function AdminDashboardScreen({ navigation }: any) {
     try {
       const s = DB.getDashboardStats();
       setStats(s);
+      const prods = DB.getAllProducts();
+      const custs = DB.getAllCustomers();
+      setProducts(prods);
+      setCustomers(custs);
       setProductCount(DB.getAllProducts().length);
       setCustomerCount(DB.getAllCustomers().length);
       const pin = DB.rotateCashierPinIfNeeded();
@@ -46,10 +50,10 @@ export default function AdminDashboardScreen({ navigation }: any) {
     <SafeAreaView style={s.safe}>
       <StatusBar backgroundColor={CHILLI.dark} barStyle="light-content" />
 
-      {/* ── Navbar ── */}
+      {/* โ”€โ”€ Navbar โ”€โ”€ */}
       <View style={s.navbar}>
         <View style={{ flex: 1 }}>
-          <Text style={s.navTitle}>👑 {t('role_admin','th')}</Text>
+          <Text style={s.navTitle}>๐‘‘ {t('role_admin','th')}</Text>
           {lang !== 'th' && <Text style={s.navSub}>{t('role_admin', lang)}</Text>}
         </View>
         <View style={s.langRow}>
@@ -78,33 +82,33 @@ export default function AdminDashboardScreen({ navigation }: any) {
           }
           activeOpacity={0.75}
         >
-          <Text style={{ fontSize: 18 }}>🚪</Text>
+          <Text style={{ fontSize: 18 }}>๐ช</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
 
-        {/* ── Shop Hero Banner ── */}
+        {/* โ”€โ”€ Shop Hero Banner โ”€โ”€ */}
         <View style={s.heroBanner}>
           <View style={s.heroDecor} />
           <View style={s.heroDecor2} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <View style={s.heroLogoRing}>
-              <Text style={{ fontSize: 32 }}>🌶️</Text>
+              <Text style={{ fontSize: 32 }}>๐ถ๏ธ</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.heroShopName}>{settings?.shop_name || 'J.Rung Chilli'}</Text>
               <Text style={s.heroShopSub}>
-                Mae Sot · {t('dashboard','th')}{lang !== 'th' ? ` / ${t('dashboard',lang)}` : ''}
+                Mae Sot ยท {t('dashboard','th')}{lang !== 'th' ? ` / ${t('dashboard',lang)}` : ''}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* ── Stats Grid ── */}
+        {/* โ”€โ”€ Stats Grid โ”€โ”€ */}
         <View style={s.statsSection}>
           <Text style={s.sectionLabel}>
-            📊 สถิติวันนี้{lang !== 'th' ? ` / ${t('today',lang)}` : ''}
+            ๐“ เธชเธ–เธดเธ•เธดเธงเธฑเธเธเธตเน{lang !== 'th' ? ` / ${t('today',lang)}` : ''}
           </Text>
           <View style={s.statsGrid}>
 
@@ -115,9 +119,9 @@ export default function AdminDashboardScreen({ navigation }: any) {
               activeOpacity={0.82}
             >
               <View style={[s.statIconBg, { backgroundColor: '#e8f8f0' }]}>
-                <Text style={s.statIconEmoji}>💰</Text>
+                <Text style={s.statIconEmoji}>๐’ฐ</Text>
               </View>
-              <Text style={s.statVal}>฿{stats.revenueToday.toLocaleString()}</Text>
+              <Text style={s.statVal}>เธฟ{stats.revenueToday.toLocaleString()}</Text>
               <Text style={s.statLblTh}>{t('revenue_today','th')}</Text>
               {lang !== 'th' && <Text style={s.statLblSub}>{t('revenue_today',lang)}</Text>}
               <View style={[s.statIndicator, { backgroundColor: CHILLI.green }]} />
@@ -130,7 +134,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
               activeOpacity={0.82}
             >
               <View style={[s.statIconBg, { backgroundColor: '#e8f4fd' }]}>
-                <Text style={s.statIconEmoji}>📋</Text>
+                <Text style={s.statIconEmoji}>๐“</Text>
               </View>
               <Text style={s.statVal}>{stats.ordersToday}</Text>
               <Text style={s.statLblTh}>{t('orders_today','th')}</Text>
@@ -145,7 +149,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
               activeOpacity={0.82}
             >
               <View style={[s.statIconBg, { backgroundColor: '#fef5ea' }]}>
-                <Text style={s.statIconEmoji}>⏳</Text>
+                <Text style={s.statIconEmoji}>โณ</Text>
               </View>
               <Text style={s.statVal}>{stats.pendingOrders}</Text>
               <Text style={s.statLblTh}>{t('pending_orders','th')}</Text>
@@ -160,10 +164,10 @@ export default function AdminDashboardScreen({ navigation }: any) {
               activeOpacity={0.82}
             >
               <View style={[s.statIconBg, { backgroundColor: '#fceaea' }]}>
-                <Text style={s.statIconEmoji}>⚠️</Text>
+                <Text style={s.statIconEmoji}>โ ๏ธ</Text>
               </View>
               <Text style={[s.statVal, stats.overdueCredit > 0 && { color: CHILLI.red }]}>
-                ฿{stats.overdueCredit.toLocaleString()}
+                เธฟ{stats.overdueCredit.toLocaleString()}
               </Text>
               <Text style={s.statLblTh}>{t('overdue_credit','th')}</Text>
               {lang !== 'th' && <Text style={s.statLblSub}>{t('overdue_credit',lang)}</Text>}
@@ -172,12 +176,12 @@ export default function AdminDashboardScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* ── Summary Row ── */}
+        {/* โ”€โ”€ Summary Row โ”€โ”€ */}
         <View style={s.summaryRow}>
           <View style={[s.summaryCard, { borderLeftColor: CHILLI.red }]}>
-            <Text style={s.summaryIcon}>📦</Text>
+            <Text style={s.summaryIcon}>๐“ฆ</Text>
             <View style={{ flex: 1 }}>
-              <Text style={s.summaryVal}>{productCount} <Text style={s.summaryUnit}>รายการ</Text></Text>
+              <Text style={s.summaryVal}>{productCount} <Text style={s.summaryUnit}>เธฃเธฒเธขเธเธฒเธฃ</Text></Text>
               <Text style={s.summaryLblTh}>{t('products','th')}</Text>
               {lang !== 'th' && <Text style={s.summaryLblSub}>{t('products',lang)}</Text>}
             </View>
@@ -186,13 +190,13 @@ export default function AdminDashboardScreen({ navigation }: any) {
               onPress={() => navigation.navigate('ProductList')}
               activeOpacity={0.75}
             >
-              <Text style={s.summaryLinkTxt}>ดูทั้งหมด ›</Text>
+              <Text style={s.summaryLinkTxt}>เธ”เธนเธ—เธฑเนเธเธซเธกเธ” โ€บ</Text>
             </TouchableOpacity>
           </View>
           <View style={[s.summaryCard, { borderLeftColor: CHILLI.blue }]}>
-            <Text style={s.summaryIcon}>👥</Text>
+            <Text style={s.summaryIcon}>๐‘ฅ</Text>
             <View style={{ flex: 1 }}>
-              <Text style={s.summaryVal}>{customerCount} <Text style={s.summaryUnit}>ราย</Text></Text>
+              <Text style={s.summaryVal}>{customerCount} <Text style={s.summaryUnit}>เธฃเธฒเธข</Text></Text>
               <Text style={s.summaryLblTh}>{t('customers','th')}</Text>
               {lang !== 'th' && <Text style={s.summaryLblSub}>{t('customers',lang)}</Text>}
             </View>
@@ -201,17 +205,17 @@ export default function AdminDashboardScreen({ navigation }: any) {
               onPress={() => navigation.navigate('CustomerList')}
               activeOpacity={0.75}
             >
-              <Text style={s.summaryLinkTxt}>ดูทั้งหมด ›</Text>
+              <Text style={s.summaryLinkTxt}>เธ”เธนเธ—เธฑเนเธเธซเธกเธ” โ€บ</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* ── Cashier PIN Card ── */}
+        {/* โ”€โ”€ Cashier PIN Card โ”€โ”€ */}
         <View style={s.pinSection}>
           <View style={s.pinCard}>
             <View style={s.pinLeft}>
               <View style={s.pinIconBg}>
-                <Text style={{ fontSize: 26 }}>🔐</Text>
+                <Text style={{ fontSize: 26 }}>๐”</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.pinTitle}>
@@ -219,7 +223,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
                   {lang !== 'th' ? ` / ${t('cashier_pin_card',lang)}` : ''}
                 </Text>
                 <Text style={s.pinSub}>
-                  {t('pin_rotates','th')}{lang !== 'th' ? ` / ${t('pin_rotates',lang)}` : ''} • Admin only
+                  {t('pin_rotates','th')}{lang !== 'th' ? ` / ${t('pin_rotates',lang)}` : ''} โ€ข Admin only
                 </Text>
               </View>
             </View>
@@ -229,43 +233,43 @@ export default function AdminDashboardScreen({ navigation }: any) {
               activeOpacity={0.75}
             >
               <Text style={s.pinValue}>
-                {showPin ? cashierPin : '● ● ● ●'}
+                {showPin ? cashierPin : 'โ— โ— โ— โ—'}
               </Text>
-              <Text style={s.pinEye}>{showPin ? '🙈' : '👁️'}</Text>
+              <Text style={s.pinEye}>{showPin ? '๐' : '๐‘๏ธ'}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* ── Management Menu ── */}
+        {/* โ”€โ”€ Management Menu โ”€โ”€ */}
         <View style={s.menuSection}>
           <Text style={s.sectionLabel}>
-            ⚙️ {t('manage_system','th')}{lang !== 'th' ? ` / ${t('manage_system',lang)}` : ''}
+            โ๏ธ {t('manage_system','th')}{lang !== 'th' ? ` / ${t('manage_system',lang)}` : ''}
           </Text>
           <View style={s.menuGrid}>
 
             {[
               {
-                icon:'📦', titleKey:'products', desc:`${productCount} รายการ`,
+                icon:'๐“ฆ', titleKey:'products', desc:`${productCount} เธฃเธฒเธขเธเธฒเธฃ`,
                 nav:'ProductList', accentColor: CHILLI.red,
               },
               {
-                icon:'➕', titleKey:'add_product', desc:'เพิ่มสินค้าใหม่',
+                icon:'โ•', titleKey:'add_product', desc:'เน€เธเธดเนเธกเธชเธดเธเธเนเธฒเนเธซเธกเน',
                 nav:'AddProduct', accentColor: CHILLI.purple,
               },
               {
-                icon:'👥', titleKey:'customers', desc:`${customerCount} ราย`,
+                icon:'๐‘ฅ', titleKey:'customers', desc:`${customerCount} เธฃเธฒเธข`,
                 nav:'CustomerList', accentColor: CHILLI.green,
               },
               {
-                icon:'👤', titleKey:'add_customer', desc:'เพิ่มลูกค้าใหม่',
+                icon:'๐‘ค', titleKey:'add_customer', desc:'เน€เธเธดเนเธกเธฅเธนเธเธเนเธฒเนเธซเธกเน',
                 nav:'AddCustomer', accentColor: CHILLI.blue,
               },
               {
-                icon:'📋', titleKey:'orders', desc:`${stats.ordersToday} วันนี้`,
+                icon:'๐“', titleKey:'orders', desc:`${stats.ordersToday} เธงเธฑเธเธเธตเน`,
                 nav:'AllOrders', accentColor: CHILLI.orange,
               },
               {
-                icon:'🖨️', titleKey:'printer_settings', desc:'Bluetooth Printer',
+                icon:'๐–จ๏ธ', titleKey:'printer_settings', desc:'Bluetooth Printer',
                 nav:'PrinterSettings', accentColor: CHILLI.gray,
               },
             ].map((item, idx) => (
@@ -284,21 +288,21 @@ export default function AdminDashboardScreen({ navigation }: any) {
                   <Text style={s.menuTitleSub}>{t(item.titleKey,lang)}</Text>
                 )}
                 <Text style={s.menuDesc}>{item.desc}</Text>
-                <Text style={[s.menuArrow, { color: item.accentColor }]}>›</Text>
+                <Text style={[s.menuArrow, { color: item.accentColor }]}>โ€บ</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* ── Footer ── */}
-        <Text style={s.footer}>🌶️ JRungChilli POS v2.8 © 2025</Text>
+        {/* โ”€โ”€ Footer โ”€โ”€ */}
+        <Text style={s.footer}>๐ถ๏ธ JRungChilli POS v2.8 ยฉ 2025</Text>
         <View style={{ height: 24 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// โ”€โ”€โ”€ Styles โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: CHILLI.cream },
 
@@ -478,3 +482,4 @@ const s = StyleSheet.create({
     marginTop: 12,
   },
 });
+
