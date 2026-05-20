@@ -171,6 +171,23 @@ const T: Record<string, Record<Lang, string>> = {
   order_3days:        { th:'ออเดอร์ย้อนหลัง 3 วัน',   mm:'၃ ရက်မှတ်တမ်း',       en:'3-day order history',   cn:'近3日订单' },
   confirm_cancel:     { th:'ยืนยันยกเลิกออเดอร์?',    mm:'အော်ဒါပယ်ဖျက်မလား?',  en:'Confirm cancel order?', cn:'确认取消订单?' },
   welcome_shop:       { th:'ยินดีต้อนรับ',             mm:'ကြိုဆိုပါ',            en:'Welcome',               cn:'欢迎' },
+
+  // ─── CustomerEntry / CustomerEntryScreen ─────────────────
+  choose_customer_type: { th:'เลือกประเภทลูกค้า',       mm:'ဖောက်သည်အမျိုး ရွေးပါ', en:'Select Customer Type',  cn:'选择客户类型' },
+  member_login:         { th:'สมาชิก',                  mm:'အဖွဲ့ဝင်',              en:'Member',                cn:'会员' },
+  member_login_title:   { th:'เข้าสู่ระบบสมาชิก',       mm:'အဖွဲ့ဝင် လော့အင်',      en:'Member Login',          cn:'会员登录' },
+  walkin_customer:      { th:'ลูกค้าทั่วไป',             mm:'ဖောက်သည်ทั่วไป',       en:'Walk-in Customer',      cn:'散客' },
+  walkin_desc:          { th:'ชำระเงินสด · ราคาปลีก',   mm:'ငွေသားပေး · လက်လီ',    en:'Cash payment · Retail', cn:'现金支付 · 零售价' },
+  member_desc:          { th:'ราคาส่ง · เครดิต · สั่งล่วงหน้า', mm:'လက်ကားဈေး · အကြွေး', en:'Wholesale · Credit · Pre-order', cn:'批发价 · 信用 · 预订' },
+
+  // ─── WholesaleOrderScreen ────────────────────────────────
+  wholesale_order:      { th:'สั่งสินค้าราคาส่ง',        mm:'လက်ကားအော်ဒါ',         en:'Wholesale Order',       cn:'批发订单' },
+  wholesale_order_title:{ th:'สั่งสินค้า (ส่ง)',         mm:'ကုန်ပစ္စည်း မှာ',        en:'Order (Wholesale)',     cn:'订货(批发)' },
+  enter_qty_kg:         { th:'กรอกจำนวน (กก.)',          mm:'အရေအတွက် ထည့်ပါ (kg)',  en:'Enter qty (kg)',        cn:'输入数量(公斤)' },
+  order_summary:        { th:'สรุปออเดอร์',              mm:'အော်ဒါ အနှစ်ချုပ်',     en:'Order Summary',         cn:'订单汇总' },
+  items_count:          { th:'รายการ',                   mm:'ကုန်ပစ္စည်း',          en:'items',                 cn:'项' },
+  back_to_home:         { th:'กลับหน้าหลัก',             mm:'ပင်မသို့ပြန်',          en:'Back to Home',          cn:'回主页' },
+  generate_password:    { th:'สร้างรหัสผ่านใหม่',        mm:'စကားဝှက်သစ် ပြုလုပ်',  en:'Generate Password',     cn:'生成新密码' },
 };
 
 // ─── Main Translation Function ──────────────────────────────
