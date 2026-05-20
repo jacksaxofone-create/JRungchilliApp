@@ -34,7 +34,7 @@ function AppContent() {
         setReady(true);
       } catch (e) {
         console.error("[App] Bootstrap error:", e);
-        setError(String(e?.message || e));
+        setError(String((e as any)?.message || e));
       }
     }
     bootstrap();

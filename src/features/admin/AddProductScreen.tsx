@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, SafeAreaView, StatusBar, Alert, ActivityIndicator, Image,
+  StyleSheet, StatusBar, Alert, ActivityIndicator, Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { launchImageLibrary, launchCamera } from "react-native-image-picker";
 import { useAppStore } from "../../core/store/appStore";
@@ -15,7 +16,7 @@ const UNITS      = ['กก.','ก.','ลิตร','ชิ้น'];
 
 export default function AddProductScreen() {
   const navigation = useNavigation<any>();
-  const { lang } = useAppStore();
+  const { lang, setProducts } = useAppStore();
   const [saving, setSaving]                 = useState(false);
   const [nameTh, setNameTh]                 = useState('');
   const [nameMm, setNameMm]                 = useState('');
@@ -102,6 +103,7 @@ export default function AddProductScreen() {
     try {
       const id  = 'P' + Date.now();
       const now = new Date().toISOString();
+      console.log('[AddProduct] saving product:', nameTh.trim(), 'id:', id);
       DB.saveProduct({
         id,
         name_th:         nameTh.trim(),
@@ -118,6 +120,9 @@ export default function AddProductScreen() {
         is_active:       1,
         updated_at:      now,
       });
+      const updated = DB.getAllProducts();
+      setProducts(updated);
+      console.log('[AddProduct] save success, store updated with', updated.length, 'products');
       Alert.alert(
         '✅ ' + t('success','th'),
         `${t('saved','th')} — ${nameTh.trim()}`,

@@ -43,6 +43,7 @@ export const DB = {
   saveProduct(p: any): void {
     try {
       const now = new Date().toISOString();
+      console.log('[DB] saveProduct START id:', p.id ?? ('P'+Date.now()), 'name:', p.name_th);
       getDB().execute(
         `INSERT OR REPLACE INTO products
          (id,name_th,name_mm,name_en,name_cn,category,unit,
@@ -65,6 +66,7 @@ export const DB = {
           now,
         ]
       );
+      console.log('[DB] saveProduct SUCCESS id:', p.id, 'name:', p.name_th);
     } catch(e) { console.error('saveProduct error:', e); throw e; }
   },
 
@@ -123,6 +125,7 @@ export const DB = {
   saveCustomer(c: any): void {
     try {
       const now = new Date().toISOString();
+      console.log('[DB] saveCustomer START id:', c.id ?? ('C'+Date.now()), 'shop:', c.shop_name);
       getDB().execute(
         `INSERT OR REPLACE INTO customers
          (id,shop_name,phone,notes,password,customer_type,
@@ -142,6 +145,7 @@ export const DB = {
           c.image_uri ?? '',
         ]
       );
+      console.log('[DB] saveCustomer SUCCESS id:', c.id, 'shop:', c.shop_name);
     } catch(e) { console.error('saveCustomer error:', e); throw e; }
   },
 

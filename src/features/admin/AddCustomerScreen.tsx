@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, SafeAreaView, StatusBar, Alert, ActivityIndicator,
+  StyleSheet, StatusBar, Alert, ActivityIndicator,
   Clipboard,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useAppStore } from "../../core/store/appStore";
 import { DB } from "../../core/database/DatabaseService";
@@ -21,7 +22,7 @@ function generatePassword(length = 8): string {
 
 export default function AddCustomerScreen() {
   const navigation = useNavigation<any>();
-  const { lang } = useAppStore();
+  const { lang, setCustomers } = useAppStore();
   const [saving, setSaving]               = useState(false);
   const [shopName, setShopName]           = useState('');
   const [phone, setPhone]                 = useState('');
@@ -56,6 +57,7 @@ export default function AddCustomerScreen() {
     try {
       const id  = 'C' + Date.now();
       const now = new Date().toISOString();
+      console.log('[AddCustomer] saving customer:', shopName.trim(), 'id:', id);
       DB.saveCustomer({
         id,
         shop_name:     shopName.trim(),
@@ -68,6 +70,9 @@ export default function AddCustomerScreen() {
         is_active:     1,
         created_at:    now,
       });
+      const updated = DB.getAllCustomers();
+      setCustomers(updated);
+      console.log('[AddCustomer] save success, store updated with', updated.length, 'customers');
       setSavedPassword(finalPassword);
       Alert.alert(
         '✅ ' + t('success', 'th'),
