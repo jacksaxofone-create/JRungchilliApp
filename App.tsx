@@ -18,7 +18,7 @@ function AppContent() {
         console.log("[App] DB initialized");
 
         const adminPin    = DB.getSetting("admin_pin")    || "0000";
-        const shopName    = DB.getSetting("shop_name")    || "J.Rung Chilli";
+        const shopName    = DB.getSetting("shop_name")    || "JRung Chilli";
         const shopAddress = DB.getSetting("shop_address") || "Mae Sot";
         const changeFund  = parseFloat(DB.getSetting("change_fund") || "500");
 
