@@ -624,7 +624,7 @@ function HistoryTab({ lang, customer, lbl }: { lang: Lang; customer: any; lbl: (
     return (
       <ScrollView style={{ flex: 1, backgroundColor: CHILLI.cream }} contentContainerStyle={{ padding: 12 }}>
         <TouchableOpacity style={ht.backBtn} onPress={() => setSelectedOrder(null)}>
-          <Text style={ht.backBtnTxt}>← {t('back', 'th')}</Text>
+          <Text style={ht.backBtnTxt}>🏠 BACK</Text>
         </TouchableOpacity>
 
         {/* Order detail card */}

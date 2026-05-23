@@ -93,11 +93,15 @@ export default function CustomerEntryScreen() {
 
         {/* Header */}
         <View style={s.header}>
+          <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
+            <Text style={s.backTxt}>🏠 BACK</Text>
+          </TouchableOpacity>
           <View style={s.headerCenter}>
             <Text style={s.headerEmoji}>🌶️</Text>
             <Text style={s.headerTitle}>สั่งสินค้า</Text>
             {lang !== 'th' && <Text style={s.headerSub}>{t('order_tab', lang)}</Text>}
           </View>
+          <View style={{ width: 70 }} />
         </View>
 
         {/* เนื้อหา */}

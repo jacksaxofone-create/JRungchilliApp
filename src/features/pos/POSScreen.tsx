@@ -17,7 +17,7 @@ import {
   ActivityIndicator, StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useAppStore } from "../../core/store/appStore";
 import { DB } from "../../core/database/DatabaseService";
 import { t, getProductName, Lang } from "../../core/i18n/translations";
@@ -56,7 +56,8 @@ const pn = StyleSheet.create({
 });
 
 export default function POSScreen() {
-  const { lang, setLang, logout, settings } = useAppStore();
+  const navigation = useNavigation<any>();
+  const { lang, setLang, logout, settings, setProducts: syncStoreProducts } = useAppStore();
 
   // ─── State ───────────────────────────────────────────────
   const [products, setProducts]                   = useState<any[]>([]);
@@ -216,6 +217,8 @@ export default function POSScreen() {
           actual_weight_kg: c.quantity_kg,
         }))
       );
+      // ── Sync store หลัง save order ──
+      try { syncStoreProducts(DB.getAllProducts()); } catch (_) {}
       setShowPayModal(false);
       clearCart();
       clearCustomer();
@@ -261,12 +264,8 @@ export default function POSScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        <TouchableOpacity style={s.homeBtn} onPress={() =>
-          Alert.alert('ออกจากระบบ', 'ต้องการออก?', [
-            { text: t('cancel','th'), style: 'cancel' },
-            { text: t('confirm','th'), onPress: logout },
-          ])}>
-          <Text style={s.homeBtnTxt}>🏠</Text>
+        <TouchableOpacity style={s.homeBtn} onPress={() => navigation.goBack()}>
+          <Text style={s.homeBtnTxt}>🏠 BACK</Text>
         </TouchableOpacity>
       </View>
 
@@ -742,8 +741,8 @@ const s = StyleSheet.create({
   langBtn: { padding: 4, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.12)' },
   langBtnOn: { backgroundColor: CHILLI.orangeLight },
   langFlag: { fontSize: 16 },
-  homeBtn: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: 8 },
-  homeBtnTxt: { fontSize: 16 },
+  homeBtn: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: 8, minWidth: 80, alignItems: 'center' },
+  homeBtnTxt: { fontSize: 12, color: '#fff', fontWeight: '700' },
 
   body: { flex: 1 },
 

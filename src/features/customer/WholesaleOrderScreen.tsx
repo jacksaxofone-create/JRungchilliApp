@@ -35,7 +35,7 @@ interface CartItem {
 export default function WholesaleOrderScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { lang, products, currentCustomer } = useAppStore();
+  const { lang, products, currentCustomer, setProducts } = useAppStore();
 
   // ลูกค้า — มาจาก route params หรือ store
   const customer = route.params?.customer ?? currentCustomer;
@@ -140,7 +140,7 @@ export default function WholesaleOrderScreen() {
           payment_status: 'pending',
           status: 'pending',
           notes: '',
-          order_type: 'pre_order',
+          order_type: 'wholesale',
           pack_status: 'waiting',
           scheduled_date: '',
           confirmed_by: '',
@@ -151,6 +151,9 @@ export default function WholesaleOrderScreen() {
         },
         items
       );
+
+      // ── Sync store หลัง save ──
+      try { setProducts(DB.getAllProducts()); } catch (_) {}
 
       setSaving(false);
       setCart({});

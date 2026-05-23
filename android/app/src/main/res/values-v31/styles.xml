@@ -1,0 +1,16 @@
+<resources>
+
+    <!-- Android 12+ (API 31+) theme overrides -->
+    <!-- Needed for proper edge-to-edge support on Samsung S23 Ultra -->
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+        <!-- Full transparent status and nav bars -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- Enforce edge-to-edge with cutout handling -->
+        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+        <!-- Enforce light or dark icons based on content -->
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+</resources>

@@ -437,7 +437,7 @@ export const DB = {
         `SELECT name FROM sub_customers WHERE owner_customer_id = ? ORDER BY name ASC`,
         [ownerCustomerId]
       );
-      return (res.rows?._array || []).map((r: any) => r.name);
+      return getRows(res).map((r: any) => r.name);
     } catch (e) { console.error('getSubCustomers error:', e); return []; }
   },
 
@@ -447,7 +447,7 @@ export const DB = {
         `SELECT name FROM sub_customers WHERE owner_customer_id = ? AND name LIKE ? ORDER BY name ASC LIMIT 10`,
         [ownerCustomerId, `${query}%`]
       );
-      return (res.rows?._array || []).map((r: any) => r.name);
+      return getRows(res).map((r: any) => r.name);
     } catch (e) { console.error('searchSubCustomers error:', e); return []; }
   },
 
