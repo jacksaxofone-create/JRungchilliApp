@@ -1,41 +1,41 @@
-import { getDB, getRows } from './db';
+﻿import { getDB, getRows } from './db';
 
 export const DB = {
 
-  // ─── Settings ───────────────────────────────────────────
+  // โ”€โ”€โ”€ Settings โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
   getSetting(key: string): string {
     try {
-      const r = getDB().execute('SELECT value FROM settings WHERE key=?', [key]);
+      const r = getDB().executeSync('SELECT value FROM settings WHERE key=?', [key]);
       return getRows(r)?.[0]?.value ?? '';
     } catch { return ''; }
   },
 
   setSetting(key: string, value: string): void {
     try {
-      getDB().execute('INSERT OR REPLACE INTO settings (key,value) VALUES (?,?)', [key, value]);
+      getDB().executeSync('INSERT OR REPLACE INTO settings (key,value) VALUES (?,?)', [key, value]);
     } catch(e) { console.error('setSetting error:', e); }
   },
 
   getAllSettings(): Record<string,string> {
     try {
-      const r = getDB().execute('SELECT key,value FROM settings');
+      const r = getDB().executeSync('SELECT key,value FROM settings');
       const out: Record<string,string> = {};
       for (const row of getRows(r)) out[row.key] = row.value;
       return out;
     } catch { return {}; }
   },
 
-  // ─── Products ───────────────────────────────────────────
+  // โ”€โ”€โ”€ Products โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
   getAllProducts(): any[] {
     try {
-      const r = getDB().execute('SELECT * FROM products WHERE is_active=1 ORDER BY category, name_th');
+      const r = getDB().executeSync('SELECT * FROM products WHERE is_active=1 ORDER BY category, name_th');
       return getRows(r);
     } catch(e) { console.error('getAllProducts error:', e); return []; }
   },
 
   getProductById(id: string): any {
     try {
-      const r = getDB().execute('SELECT * FROM products WHERE id=?', [id]);
+      const r = getDB().executeSync('SELECT * FROM products WHERE id=?', [id]);
       return getRows(r)?.[0] ?? null;
     } catch { return null; }
   },
@@ -44,7 +44,7 @@ export const DB = {
     try {
       const now = new Date().toISOString();
       console.log('[DB] saveProduct START id:', p.id ?? ('P'+Date.now()), 'name:', p.name_th);
-      getDB().execute(
+      getDB().executeSync(
         `INSERT OR REPLACE INTO products
          (id,name_th,name_mm,name_en,name_cn,category,unit,
           price_retail,price_wholesale,stock_kg,min_stock_kg,image_uri,is_active,updated_at)
@@ -55,8 +55,8 @@ export const DB = {
           p.name_mm ?? '',
           p.name_en ?? '',
           p.name_cn ?? '',
-          p.category ?? 'พริก',
-          p.unit ?? 'กก.',
+          p.category ?? 'เธเธฃเธดเธ',
+          p.unit ?? 'เธเธ.',
           Number(p.price_retail) || 0,
           Number(p.price_wholesale) || 0,
           Number(p.stock_kg) || 0,
@@ -72,24 +72,24 @@ export const DB = {
 
   deleteProduct(id: string): void {
     try {
-      getDB().execute(
+      getDB().executeSync(
         'UPDATE products SET is_active=0, updated_at=? WHERE id=?',
         [new Date().toISOString(), id]
       );
     } catch(e) { console.error('deleteProduct error:', e); throw e; }
   },
 
-  // ─── Customers ──────────────────────────────────────────
+  // โ”€โ”€โ”€ Customers โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
   getAllCustomers(): any[] {
     try {
-      const r = getDB().execute('SELECT * FROM customers WHERE is_active=1 ORDER BY shop_name');
+      const r = getDB().executeSync('SELECT * FROM customers WHERE is_active=1 ORDER BY shop_name');
       return getRows(r);
     } catch(e) { console.error('getAllCustomers error:', e); return []; }
   },
 
   getCustomerByShopName(shopName: string): any {
     try {
-      const r = getDB().execute(
+      const r = getDB().executeSync(
         'SELECT * FROM customers WHERE shop_name=? AND is_active=1', [shopName]);
       return getRows(r)?.[0] ?? null;
     } catch { return null; }
@@ -97,14 +97,14 @@ export const DB = {
 
   getCustomerById(id: string): any {
     try {
-      const r = getDB().execute('SELECT * FROM customers WHERE id=? AND is_active=1', [id]);
+      const r = getDB().executeSync('SELECT * FROM customers WHERE id=? AND is_active=1', [id]);
       return getRows(r)?.[0] ?? null;
     } catch { return null; }
   },
 
   loginCustomer(shopName: string, password: string): any {
     try {
-      const r = getDB().execute(
+      const r = getDB().executeSync(
         'SELECT * FROM customers WHERE shop_name=? AND password=? AND is_active=1',
         [shopName, password]
       );
@@ -114,7 +114,7 @@ export const DB = {
 
   searchCustomers(query: string): any[] {
     try {
-      const r = getDB().execute(
+      const r = getDB().executeSync(
         "SELECT * FROM customers WHERE is_active=1 AND shop_name LIKE ? ORDER BY shop_name LIMIT 10",
         [`%${query}%`]
       );
@@ -126,7 +126,7 @@ export const DB = {
     try {
       const now = new Date().toISOString();
       console.log('[DB] saveCustomer START id:', c.id ?? ('C'+Date.now()), 'shop:', c.shop_name);
-      getDB().execute(
+      getDB().executeSync(
         `INSERT OR REPLACE INTO customers
          (id,shop_name,phone,notes,password,customer_type,
           credit_limit,credit_used,is_active,created_at,image_uri)
@@ -151,7 +151,7 @@ export const DB = {
 
   updateCustomerCredit(customerId: string, creditUsed: number): void {
     try {
-      getDB().execute(
+      getDB().executeSync(
         'UPDATE customers SET credit_used=? WHERE id=?',
         [creditUsed, customerId]
       );
@@ -160,11 +160,11 @@ export const DB = {
 
   deleteCustomer(id: string): void {
     try {
-      getDB().execute('UPDATE customers SET is_active=0 WHERE id=?', [id]);
+      getDB().executeSync('UPDATE customers SET is_active=0 WHERE id=?', [id]);
     } catch(e) { console.error('deleteCustomer error:', e); throw e; }
   },
 
-  // ─── Orders ─────────────────────────────────────────────
+  // โ”€โ”€โ”€ Orders โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
   saveOrder(order: any, items: any[]): void {
     try {
       const db = getDB();
@@ -179,7 +179,7 @@ export const DB = {
           order.id,
           order.order_number,
           order.customer_id ?? '',
-          order.customer_name ?? 'ลูกค้าทั่วไป',
+          order.customer_name ?? 'เธฅเธนเธเธเนเธฒเธ—เธฑเนเธงเนเธ',
           order.customer_phone ?? '',
           Number(order.subtotal) || 0,
           Number(order.discount) || 0,
@@ -228,12 +228,12 @@ export const DB = {
     try {
       const now = new Date().toISOString();
       if (packStatus) {
-        getDB().execute(
+        getDB().executeSync(
           'UPDATE orders SET status=?, pack_status=?, updated_at=? WHERE id=?',
           [status, packStatus, now, orderId]
         );
       } else {
-        getDB().execute(
+        getDB().executeSync(
           'UPDATE orders SET status=?, updated_at=? WHERE id=?',
           [status, now, orderId]
         );
@@ -245,7 +245,7 @@ export const DB = {
     try {
       const now = new Date().toISOString();
       const packedAt = packStatus === 'packed' ? now : '';
-      getDB().execute(
+      getDB().executeSync(
         'UPDATE orders SET pack_status=?, packed_at=?, updated_at=? WHERE id=?',
         [packStatus, packedAt, now, orderId]
       );
@@ -257,7 +257,7 @@ export const DB = {
       const now = new Date().toISOString();
       const aw = actualWeight ?? 0;
       const total = aw * 0; // will recalculate externally
-      getDB().execute(
+      getDB().executeSync(
         'UPDATE order_items SET is_packed=?, actual_weight_kg=?, actual_kg=?, packed_at=? WHERE id=?',
         [isPacked ? 1 : 0, aw, aw, isPacked ? now : '', itemId]
       );
@@ -267,7 +267,7 @@ export const DB = {
   getOrdersToday(): any[] {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const r = getDB().execute(
+      const r = getDB().executeSync(
         'SELECT * FROM orders WHERE created_at LIKE ? ORDER BY created_at DESC',
         [today + '%']
       );
@@ -277,7 +277,7 @@ export const DB = {
 
   getPreOrdersForDate(date: string): any[] {
     try {
-      const r = getDB().execute(
+      const r = getDB().executeSync(
         "SELECT * FROM orders WHERE order_type='pre_order' AND (scheduled_date=? OR scheduled_date LIKE ?) ORDER BY created_at DESC",
         [date, date + '%']
       );
@@ -287,7 +287,7 @@ export const DB = {
 
   getPendingPackOrders(): any[] {
     try {
-      const r = getDB().execute(
+      const r = getDB().executeSync(
         "SELECT * FROM orders WHERE order_type='pre_order' AND pack_status IN ('waiting','packing') ORDER BY scheduled_date ASC, created_at ASC"
       );
       return getRows(r);
@@ -296,7 +296,7 @@ export const DB = {
 
   getOrdersByCustomer(customerName: string): any[] {
     try {
-      const r = getDB().execute(
+      const r = getDB().executeSync(
         'SELECT * FROM orders WHERE customer_name=? ORDER BY created_at DESC LIMIT 50',
         [customerName]
       );
@@ -306,7 +306,7 @@ export const DB = {
 
   getOrdersByCustomerId(customerId: string): any[] {
     try {
-      const r = getDB().execute(
+      const r = getDB().executeSync(
         'SELECT * FROM orders WHERE customer_id=? ORDER BY created_at DESC LIMIT 50',
         [customerId]
       );
@@ -316,7 +316,7 @@ export const DB = {
 
   getAllOrders(limit: number = 100): any[] {
     try {
-      const r = getDB().execute(
+      const r = getDB().executeSync(
         'SELECT * FROM orders ORDER BY created_at DESC LIMIT ?',
         [limit]
       );
@@ -326,17 +326,17 @@ export const DB = {
 
   getOrderItems(orderId: string): any[] {
     try {
-      const r = getDB().execute(
+      const r = getDB().executeSync(
         'SELECT * FROM order_items WHERE order_id=?', [orderId]);
       return getRows(r);
     } catch { return []; }
   },
 
-  // ─── Credit ─────────────────────────────────────────────
+  // โ”€โ”€โ”€ Credit โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
   saveCreditRecord(c: any): void {
     try {
       const now = new Date().toISOString();
-      getDB().execute(
+      getDB().executeSync(
         `INSERT OR REPLACE INTO credit_records
          (id,customer_id,customer_name,order_id,order_number,
           amount,amount_paid,due_date,paid_date,status,created_at)
@@ -360,7 +360,7 @@ export const DB = {
 
   getCreditByCustomer(customerId: string): any[] {
     try {
-      const r = getDB().execute(
+      const r = getDB().executeSync(
         "SELECT * FROM credit_records WHERE customer_id=? AND status!='paid' ORDER BY created_at DESC",
         [customerId]
       );
@@ -370,7 +370,7 @@ export const DB = {
 
   getTotalCreditUsed(customerId: string): number {
     try {
-      const r = getDB().execute(
+      const r = getDB().executeSync(
         "SELECT COALESCE(SUM(amount-amount_paid),0) as total FROM credit_records WHERE customer_id=? AND status!='paid'",
         [customerId]
       );
@@ -378,7 +378,7 @@ export const DB = {
     } catch { return 0; }
   },
 
-  // ─── Dashboard ──────────────────────────────────────────
+  // โ”€โ”€โ”€ Dashboard โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€โ”€
   getDashboardStats(): {
     revenueToday: number;
     ordersToday: number;
@@ -387,18 +387,18 @@ export const DB = {
   } {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const rev = getDB().execute(
+      const rev = getDB().executeSync(
         "SELECT COALESCE(SUM(total),0) as total FROM orders WHERE created_at LIKE ? AND payment_status='paid'",
         [today + '%']
       );
-      const ord = getDB().execute(
+      const ord = getDB().executeSync(
         'SELECT COUNT(*) as count FROM orders WHERE created_at LIKE ?',
         [today + '%']
       );
-      const pen = getDB().execute(
+      const pen = getDB().executeSync(
         "SELECT COUNT(*) as count FROM orders WHERE status='pending'"
       );
-      const cred = getDB().execute(
+      const cred = getDB().executeSync(
         "SELECT COALESCE(SUM(amount-amount_paid),0) as total FROM credit_records WHERE status='overdue'"
       );
       return {
@@ -430,10 +430,10 @@ export const DB = {
     } catch { return '1234'; }
   },
 
-  // ── Sub-customers (รายชื่อลูกค้าของผู้ค้าส่ง) ──
+  // โ”€โ”€ Sub-customers (เธฃเธฒเธขเธเธทเนเธญเธฅเธนเธเธเนเธฒเธเธญเธเธเธนเนเธเนเธฒเธชเนเธ) โ”€โ”€
   getSubCustomers(ownerCustomerId: string): string[] {
     try {
-      const res = getDB().execute(
+      const res = getDB().executeSync(
         `SELECT name FROM sub_customers WHERE owner_customer_id = ? ORDER BY name ASC`,
         [ownerCustomerId]
       );
@@ -443,7 +443,7 @@ export const DB = {
 
   searchSubCustomers(ownerCustomerId: string, query: string): string[] {
     try {
-      const res = getDB().execute(
+      const res = getDB().executeSync(
         `SELECT name FROM sub_customers WHERE owner_customer_id = ? AND name LIKE ? ORDER BY name ASC LIMIT 10`,
         [ownerCustomerId, `${query}%`]
       );
@@ -455,10 +455,11 @@ export const DB = {
     try {
       const trimmed = name.trim();
       if (!trimmed) return;
-      getDB().execute(
+      getDB().executeSync(
         `INSERT OR IGNORE INTO sub_customers (id, owner_customer_id, name) VALUES (?,?,?)`,
         [`SC${Date.now()}`, ownerCustomerId, trimmed]
       );
     } catch (e) { console.error('saveSubCustomer error:', e); }
   },
 };
+
