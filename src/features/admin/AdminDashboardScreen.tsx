@@ -80,7 +80,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
             ))}
           </View>
           <TouchableOpacity style={s.logoutBtn} onPress={() => { logout(); navigation.replace('Login'); }}>
-            <Text style={s.logoutTxt}>🚪 {lang === 'th' ? 'ออก' : lang === 'mm' ? 'ထွက်' : 'Out'}</Text>
+            <Text style={s.logoutTxt}>🏠 BACK</Text>
           </TouchableOpacity>
         </View>
       </View>

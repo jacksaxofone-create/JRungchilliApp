@@ -414,20 +414,28 @@ export const DB = {
 
   // cashier PIN rotation
   rotateCashierPinIfNeeded(): string {
+    // [FIX] ถ้า lastChanged ว่าง = ยังไม่เคย seed -> rotate ทันที, ป้องกัน Invalid Date
     try {
+      const today = new Date().toISOString().split('T')[0];
       const lastChanged = this.getSetting('cashier_pin_last_changed') || '';
       const rotateDays = parseInt(this.getSetting('cashier_pin_rotate_days') || '5', 10);
-      const today = new Date().toISOString().split('T')[0];
-      const lastDate = new Date(lastChanged || today);
-      const diff = Math.floor((new Date(today).getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-      if (diff >= rotateDays) {
+      const existingPin = this.getSetting('cashier_pin') || '';
+      if (!lastChanged || !existingPin) {
         const newPin = Math.floor(1000 + Math.random() * 9000).toString();
         this.setSetting('cashier_pin', newPin);
         this.setSetting('cashier_pin_last_changed', today);
         return newPin;
       }
-      return this.getSetting('cashier_pin') || '1234';
+      const diff = Math.floor((new Date(today).getTime() - new Date(lastChanged).getTime()) / 86400000);
+      if (!isNaN(diff) && diff >= rotateDays) {
+        const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+        this.setSetting('cashier_pin', newPin);
+        this.setSetting('cashier_pin_last_changed', today);
+        return newPin;
+      }
+      return existingPin;
     } catch { return '1234'; }
+  },
   },
 
   // โ”€โ”€ Sub-customers (เธฃเธฒเธขเธเธทเนเธญเธฅเธนเธเธเนเธฒเธเธญเธเธเธนเนเธเนเธฒเธชเนเธ) โ”€โ”€
