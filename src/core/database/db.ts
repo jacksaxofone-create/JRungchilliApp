@@ -58,11 +58,11 @@ export function getRows(result: any): any[] {
 export function initDB(): void {
   const db = getDB();
 
-  db.execute(`CREATE TABLE IF NOT EXISTS settings (
+  db.executeSync(`CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY, value TEXT
   )`);
 
-  db.execute(`CREATE TABLE IF NOT EXISTS products (
+  db.executeSync(`CREATE TABLE IF NOT EXISTS products (
     id TEXT PRIMARY KEY,
     name_th TEXT, name_mm TEXT, name_en TEXT, name_cn TEXT,
     category TEXT, unit TEXT,
@@ -73,7 +73,7 @@ export function initDB(): void {
     updated_at TEXT
   )`);
 
-  db.execute(`CREATE TABLE IF NOT EXISTS customers (
+  db.executeSync(`CREATE TABLE IF NOT EXISTS customers (
     id TEXT PRIMARY KEY,
     shop_name TEXT, phone TEXT, notes TEXT, password TEXT,
     customer_type TEXT DEFAULT 'retail',
@@ -85,7 +85,7 @@ export function initDB(): void {
   )`);
 
   // orders table โ€” full schema with pack fields + order_type
-  db.execute(`CREATE TABLE IF NOT EXISTS orders (
+  db.executeSync(`CREATE TABLE IF NOT EXISTS orders (
     id TEXT PRIMARY KEY,
     order_number TEXT, customer_id TEXT,
     customer_name TEXT, customer_phone TEXT,
@@ -102,7 +102,7 @@ export function initDB(): void {
   )`);
 
   // order_items โ€” full schema with packing fields
-  db.execute(`CREATE TABLE IF NOT EXISTS order_items (
+  db.executeSync(`CREATE TABLE IF NOT EXISTS order_items (
     id TEXT PRIMARY KEY,
     order_id TEXT, product_id TEXT,
     product_name_th TEXT, product_name_mm TEXT,
@@ -116,7 +116,7 @@ export function initDB(): void {
     packed_at TEXT DEFAULT ''
   )`);
 
-  db.execute(`CREATE TABLE IF NOT EXISTS credit_records (
+  db.executeSync(`CREATE TABLE IF NOT EXISTS credit_records (
     id TEXT PRIMARY KEY,
     customer_id TEXT, customer_name TEXT,
     order_id TEXT, order_number TEXT,
@@ -127,19 +127,19 @@ export function initDB(): void {
   )`);
 
   // sub_customers โ€” เธฃเธฒเธขเธเธทเนเธญเธฅเธนเธเธเนเธฒเธเธญเธเธเธนเนเธเนเธฒเธชเนเธ (เธฅเธนเธเธเนเธฒเธเธญเธเธฅเธนเธเธเนเธฒ)
-  db.execute(`CREATE TABLE IF NOT EXISTS sub_customers (
+  db.executeSync(`CREATE TABLE IF NOT EXISTS sub_customers (
     id TEXT PRIMARY KEY,
     owner_customer_id TEXT NOT NULL,
     name TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(owner_customer_id, name)
   )`);
-  db.execute(`CREATE INDEX IF NOT EXISTS idx_sub_customers_owner ON sub_customers(owner_customer_id)`);
+  db.executeSync(`CREATE INDEX IF NOT EXISTS idx_sub_customers_owner ON sub_customers(owner_customer_id)`);
 
   // Migrate existing tables โ€” add missing columns safely
   const safeAdd = (table: string, col: string, type: string, def: string = '') => {
     try {
-      db.execute(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}${def ? ' DEFAULT ' + def : ''}`);
+      db.executeSync(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}${def ? ' DEFAULT ' + def : ''}`);
     } catch (_) { /* column already exists โ€” ignore */ }
   };
 
@@ -173,16 +173,16 @@ export function initDB(): void {
     cashier_pin_last_changed: new Date().toISOString().split('T')[0],
   };
   for (const [k, v] of Object.entries(defaults)) {
-    db.execute(`INSERT OR IGNORE INTO settings (key,value) VALUES (?,?)`, [k, v]);
+    db.executeSync(`INSERT OR IGNORE INTO settings (key,value) VALUES (?,?)`, [k, v]);
   }
 
   // เน€เธเนเธ seeded
-  const seedCheck = getRows(db.execute(`SELECT value FROM settings WHERE key='seeded'`));
+  const seedCheck = getRows(db.executeSync(`SELECT value FROM settings WHERE key='seeded'`));
   const isSeeded  = seedCheck.length > 0 && seedCheck[0]?.value === '1';
 
   if (!isSeeded) {
-    db.execute(`DELETE FROM products`);
-    db.execute(`DELETE FROM customers`);
+    db.executeSync(`DELETE FROM products`);
+    db.executeSync(`DELETE FROM customers`);
 
     const now = new Date().toISOString();
 
@@ -212,7 +212,7 @@ export function initDB(): void {
     ];
 
     for (const p of products) {
-      db.execute(
+      db.executeSync(
         `INSERT INTO products
          (id,name_th,name_mm,name_en,name_cn,category,unit,
           price_retail,price_wholesale,stock_kg,min_stock_kg,image_uri,is_active,updated_at)
@@ -222,20 +222,20 @@ export function initDB(): void {
       );
     }
 
-    db.execute(
+    db.executeSync(
       `INSERT INTO customers
        (id,shop_name,phone,notes,password,customer_type,credit_limit,credit_used,is_active,created_at,image_uri)
        VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
       ['c001','ร้านแม่สอดเจริญ','055-111-222','ลูกค้าประจำ','1234','wholesale',5000,0,1,now,'']
     );
-    db.execute(
+    db.executeSync(
       `INSERT INTO customers
        (id,shop_name,phone,notes,password,customer_type,credit_limit,credit_used,is_active,created_at,image_uri)
        VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
       ['c002','ร้านสมสมาย','055-333-444','','5678','retail',2000,0,1,now,'']
     );
 
-    db.execute(`INSERT OR REPLACE INTO settings (key,value) VALUES ('seeded','1')`);
+    db.executeSync(`INSERT OR REPLACE INTO settings (key,value) VALUES ('seeded','1')`);
     console.log('โ… Seeded 22 products + 2 customers');
   }
 }
