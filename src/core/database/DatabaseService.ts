@@ -1,4 +1,4 @@
-﻿import { getDB, getRows } from './db';
+import { getDB, getRows } from './db';
 
 export const DB = {
 

@@ -1,4 +1,4 @@
-﻿import { open } from '@op-engineering/op-sqlite';
+import { open } from '@op-engineering/op-sqlite';
 
 let _db: any = null;
 
