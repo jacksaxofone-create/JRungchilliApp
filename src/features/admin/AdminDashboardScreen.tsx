@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import {
-  View, Text, TouchableOpacity, ScrollView,
+  View, Text, TouchableOpacity, ScrollView, TextInput, Alert,
   StyleSheet, StatusBar, Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,9 +35,11 @@ export default function AdminDashboardScreen({ navigation }: any) {
   });
   const [productCount, setProductCount] = React.useState(0);
   const [customerCount, setCustomerCount] = React.useState(0);
-  const [cashierPin, setCashierPin] = React.useState('----');
   const [showPin, setShowPin] = React.useState(false);
-
+  const [editPin, setEditPin] = React.useState(false);
+  const [newPinInput, setNewPinInput] = React.useState('');
+  const [pinError, setPinError] = React.useState('');
+  const [pinInfo, setPinInfo] = React.useState<{pin:string;lastChanged:string;nextRotate:string;daysLeft:number}>({pin:'----',lastChanged:'-',nextRotate:'-',daysLeft:0});
   useFocusEffect(useCallback(() => {
     try {
       const s = DB.getDashboardStats();
@@ -48,8 +50,8 @@ export default function AdminDashboardScreen({ navigation }: any) {
       setCustomers(custs);
       setProductCount(prods.length);
       setCustomerCount(custs.length);
-      const pin = DB.rotateCashierPinIfNeeded();
-      setCashierPin(pin);
+      DB.rotateCashierPinIfNeeded();
+      setPinInfo(DB.getCashierPinInfo());
     } catch (e) {
       console.error('Dashboard load error:', e);
     }
@@ -126,13 +128,71 @@ export default function AdminDashboardScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {/* Cashier PIN */}
+        {/* Cashier PIN Card — [FIX] redesign: show/hide, edit, lastChanged, nextRotate */}
         <View style={s.pinCard}>
-          <Text style={s.pinTitle}>🔑 {t('cashier_pin_card','th')}{lang !== 'th' ? ` / ${t('cashier_pin_card',lang)}` : ''}</Text>
-          <TouchableOpacity onPress={() => setShowPin(!showPin)}>
-            <Text style={s.pinVal}>{showPin ? cashierPin : '••••'}</Text>
-          </TouchableOpacity>
-          <Text style={s.pinSub}>{t('pin_rotates','th')}{lang !== 'th' ? ` / ${t('pin_rotates',lang)}` : ''}</Text>
+          {/* Header */}
+          <View style={s.pinCardHeader}>
+            <Text style={s.pinTitle}>🔑 รหัสแคชเชียร์{lang !== 'th' ? ' / Cashier PIN' : ''}</Text>
+            <View style={s.pinHeaderBtns}>
+              <TouchableOpacity style={s.pinIconBtn} onPress={() => setShowPin(!showPin)}>
+                <Text style={s.pinIconTxt}>{showPin ? '🙈' : '👁️'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.pinIconBtn} onPress={() => { setEditPin(!editPin); setNewPinInput(''); setPinError(''); }}>
+                <Text style={s.pinIconTxt}>{editPin ? '✕' : '✏️'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* PIN Display */}
+          <Text style={s.pinVal}>{showPin ? pinInfo.pin : '••••'}</Text>
+
+          {/* Date Info */}
+          <View style={s.pinDateRow}>
+            <View style={s.pinDateBox}>
+              <Text style={s.pinDateLabel}>📅 เปลี่ยนล่าสุด</Text>
+              <Text style={s.pinDateVal}>{pinInfo.lastChanged}</Text>
+            </View>
+            <View style={s.pinDateDivider} />
+            <View style={s.pinDateBox}>
+              <Text style={s.pinDateLabel}>🔄 เปลี่ยนอัตโนมัติ</Text>
+              <Text style={s.pinDateVal}>{pinInfo.nextRotate}</Text>
+              <Text style={s.pinDaysLeft}>อีก {pinInfo.daysLeft} วัน</Text>
+            </View>
+          </View>
+
+          {/* Edit PIN Form */}
+          {editPin && (
+            <View style={s.pinEditBox}>
+              <Text style={s.pinEditLabel}>✏️ ตั้งรหัสใหม่ (4 หลัก)</Text>
+              <View style={s.pinEditRow}>
+                <TextInput
+                  style={s.pinEditInput}
+                  value={newPinInput}
+                  onChangeText={v => { setNewPinInput(v.replace(/[^0-9]/g,'')); setPinError(''); }}
+                  keyboardType="numeric"
+                  maxLength={4}
+                  secureTextEntry={!showPin}
+                  placeholder="0000"
+                  placeholderTextColor="#666"
+                />
+                <TouchableOpacity
+                  style={[s.pinSaveBtn, newPinInput.length !== 4 && s.pinSaveBtnDisabled]}
+                  onPress={() => {
+                    if (newPinInput.length !== 4) { setPinError('กรุณาใส่รหัส 4 หลัก'); return; }
+                    DB.setManualCashierPin(newPinInput);
+                    setPinInfo(DB.getCashierPinInfo());
+                    setEditPin(false);
+                    setNewPinInput('');
+                    setPinError('');
+                  }}
+                  disabled={newPinInput.length !== 4}
+                >
+                  <Text style={s.pinSaveTxt}>บันทึก</Text>
+                </TouchableOpacity>
+              </View>
+              {pinError ? <Text style={s.pinErrorTxt}>{pinError}</Text> : null}
+            </View>
+          )}
         </View>
 
         {/* Menu */}
@@ -194,6 +254,24 @@ const s = StyleSheet.create({
   pinTitle:     { color: CHILLI.accent, fontSize: FONT.sm, marginBottom: SPACE.xs },
   pinVal:       { color:'#fff', fontSize: 40, fontWeight:'900', letterSpacing: 8 },
   pinSub:       { color: CHILLI.muted, fontSize: FONT.xs, marginTop: SPACE.xs },
+  pinCardHeader:  { flexDirection:'row', justifyContent:'space-between', alignItems:'center', width:'100%', marginBottom: SPACE.xs },
+  pinHeaderBtns:  { flexDirection:'row', gap: 6 },
+  pinIconBtn:     { backgroundColor:'rgba(255,255,255,0.12)', borderRadius: 20, width: 36, height: 36, alignItems:'center', justifyContent:'center' },
+  pinIconTxt:     { fontSize: 16 },
+  pinDateRow:     { flexDirection:'row', width:'100%', marginTop: SPACE.sm, gap: SPACE.sm },
+  pinDateBox:     { flex:1, backgroundColor:'rgba(255,255,255,0.07)', borderRadius: RADIUS.md, padding: SPACE.sm, alignItems:'center' },
+  pinDateDivider: { width: 1, backgroundColor:'rgba(255,255,255,0.15)' },
+  pinDateLabel:   { color: CHILLI.muted, fontSize: 10, marginBottom: 2, textAlign:'center' },
+  pinDateVal:     { color:'#fff', fontSize: FONT.sm, fontWeight:'700', textAlign:'center' },
+  pinDaysLeft:    { color: CHILLI.accent, fontSize: 10, marginTop: 2 },
+  pinEditBox:     { width:'100%', marginTop: SPACE.sm, backgroundColor:'rgba(255,255,255,0.07)', borderRadius: RADIUS.md, padding: SPACE.sm },
+  pinEditLabel:   { color: CHILLI.accent, fontSize: FONT.xs, marginBottom: SPACE.xs },
+  pinEditRow:     { flexDirection:'row', alignItems:'center', gap: SPACE.sm },
+  pinEditInput:   { flex:1, backgroundColor:'rgba(255,255,255,0.15)', borderRadius: RADIUS.sm, paddingHorizontal: SPACE.sm, paddingVertical: 8, color:'#fff', fontSize: 24, fontWeight:'900', letterSpacing: 6, textAlign:'center' },
+  pinSaveBtn:     { backgroundColor: CHILLI.accent, borderRadius: RADIUS.sm, paddingHorizontal: SPACE.md, paddingVertical: 10 },
+  pinSaveBtnDisabled: { backgroundColor:'rgba(255,255,255,0.2)' },
+  pinSaveTxt:     { color: CHILLI.dark, fontWeight:'800', fontSize: FONT.sm },
+  pinErrorTxt:    { color:'#ff6b6b', fontSize: FONT.xs, marginTop: 4 },
   menuGrid:     { flexDirection:'row', flexWrap:'wrap', marginHorizontal: SPACE.sm, gap: SPACE.sm },
   menuCard:     { width: '30%', backgroundColor:'#fff', borderRadius: RADIUS.md,
                   padding: SPACE.sm, alignItems:'center', ...shadow, minHeight: 80 },

@@ -436,6 +436,31 @@ export const DB = {
       return existingPin;
     } catch { return '1234'; }
   },
+
+  // [FIX] Admin แก้ PIN เองได้ — เซ็ต PIN ใหม่ + reset วันที่
+  setManualCashierPin(newPin: string): void {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      this.setSetting('cashier_pin', newPin);
+      this.setSetting('cashier_pin_last_changed', today);
+    } catch(e) { console.error('setManualCashierPin error:', e); }
+  },
+
+  // [FIX] คืนข้อมูล PIN + วันที่เปลี่ยนล่าสุด + วันที่จะเปลี่ยนอัตโนมัติ
+  getCashierPinInfo(): { pin: string; lastChanged: string; nextRotate: string; daysLeft: number } {
+    try {
+      const pin = this.getSetting('cashier_pin') || '----';
+      const lastChanged = this.getSetting('cashier_pin_last_changed') || '';
+      const rotateDays = parseInt(this.getSetting('cashier_pin_rotate_days') || '5', 10);
+      if (!lastChanged) return { pin, lastChanged: '-', nextRotate: '-', daysLeft: 0 };
+      const last = new Date(lastChanged);
+      const next = new Date(last);
+      next.setDate(next.getDate() + rotateDays);
+      const today = new Date();
+      const daysLeft = Math.max(0, Math.ceil((next.getTime() - today.getTime()) / 86400000));
+      const fmt = (d: Date) => d.toISOString().split('T')[0];
+      return { pin, lastChanged: fmt(last), nextRotate: fmt(next), daysLeft };
+    } catch { return { pin: '----', lastChanged: '-', nextRotate: '-', daysLeft: 0 }; }
   },
 
   // โ”€โ”€ Sub-customers (เธฃเธฒเธขเธเธทเนเธญเธฅเธนเธเธเนเธฒเธเธญเธเธเธนเนเธเนเธฒเธชเนเธ) โ”€โ”€
